@@ -14,7 +14,10 @@ insert into public.categories (id, name, sort_order) values
 on conflict (id) do nothing;
 
 -- ---------------------------------------------------------------------------
--- products
+-- products — fotoğraflar "product-photos" bucket'ına yüklendikten sonra
+-- image_url o public URL'leri referans alır (bkz. README "Ürün fotoğraflarını
+-- yükleme"). Flat White/Cortado/Brownie scaldcoffee.com'dan alınan gerçek
+-- ürün fotoğraflarıyla eşleşir; diğerleri henüz fotoğrafsız placeholder.
 -- ---------------------------------------------------------------------------
 insert into public.products (id, category_id, name, description, price, image_url, is_available) values
   (
@@ -32,6 +35,15 @@ insert into public.products (id, category_id, name, description, price, image_ur
     'Flat White',
     'Mikroköpüklü süt ile dengeli espresso.',
     95.00,
+    null,
+    true
+  ),
+  (
+    'a6666666-6666-6666-6666-666666666666',
+    '11111111-1111-1111-1111-111111111111',
+    'Cortado',
+    'Küçük bardakta, espresso ile sütün dengeli buluşması.',
+    80.00,
     null,
     true
   ),
@@ -54,15 +66,16 @@ insert into public.products (id, category_id, name, description, price, image_ur
     true
   ),
   (
-    'a5555555-5555-5555-5555-555555555555',
+    'a7777777-7777-7777-7777-777777777777',
     '33333333-3333-3333-3333-333333333333',
-    'Tereyağlı Kruvasan',
-    'Günlük taze pişen, çıtır kruvasan.',
-    75.00,
+    'Brownie',
+    'Bol çikolatalı, kendi imalathanemizde günlük hazırlanan brownie.',
+    90.00,
     null,
     true
   )
-on conflict (id) do nothing;
+on conflict (id) do update set
+  name = excluded.name, description = excluded.description, price = excluded.price;
 
 -- ---------------------------------------------------------------------------
 -- locations — scaldcoffee.com'dan alınan gerçek şube bilgileri

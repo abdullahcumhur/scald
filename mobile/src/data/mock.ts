@@ -7,6 +7,11 @@ export const mockCategories: Category[] = [
   { id: 'bakery', name: 'Fırın', sortOrder: 3 },
 ];
 
+// scaldcoffee.com'dan alınan gerçek ürün fotoğrafları (Supabase Storage'daki
+// "product-photos" bucket'ında barındırılıyor).
+const PRODUCT_PHOTOS_BASE =
+  'https://zhotyrulimzkyoceaawi.supabase.co/storage/v1/object/public/product-photos';
+
 export const mockProducts: Product[] = [
   {
     id: 'espresso',
@@ -22,6 +27,16 @@ export const mockProducts: Product[] = [
     name: 'Flat White',
     description: 'Mikroköpüklü süt ile dengeli espresso.',
     price: 95,
+    imageUrl: `${PRODUCT_PHOTOS_BASE}/flat-white.jpg`,
+    isAvailable: true,
+  },
+  {
+    id: 'cortado',
+    categoryId: 'coffee',
+    name: 'Cortado',
+    description: 'Küçük bardakta, espresso ile sütün dengeli buluşması.',
+    price: 80,
+    imageUrl: `${PRODUCT_PHOTOS_BASE}/cortado.jpg`,
     isAvailable: true,
   },
   {
@@ -41,11 +56,12 @@ export const mockProducts: Product[] = [
     isAvailable: true,
   },
   {
-    id: 'croissant',
+    id: 'brownie',
     categoryId: 'bakery',
-    name: 'Tereyağlı Kruvasan',
-    description: 'Günlük taze pişen, çıtır kruvasan.',
-    price: 75,
+    name: 'Brownie',
+    description: 'Bol çikolatalı, kendi imalathanemizde günlük hazırlanan brownie.',
+    price: 90,
+    imageUrl: `${PRODUCT_PHOTOS_BASE}/brownie.jpg`,
     isAvailable: true,
   },
 ];

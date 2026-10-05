@@ -136,6 +136,21 @@ curl -X POST "https://<PROJECT_REF>.supabase.co/storage/v1/object/location-photo
 Yükledikten sonra `locations.image_url` alanını public URL ile güncelleyin:
 `https://<PROJECT_REF>.supabase.co/storage/v1/object/public/location-photos/<dosya-adı>`
 
+## Ürün fotoğraflarını yükleme
+
+Aynı şekilde, scaldcoffee.com'dan alınan gerçek ürün fotoğrafları (Flat
+White, Cortado, Brownie) repoda `mobile/assets/images/brand/products/*.jpg`
+altında bulunur ve `product-photos` bucket'ına yüklenir (0005 migration'ı
+bucket'ı ve RLS politikalarını kurar). Yükleme adımları şube fotoğraflarıyla
+birebir aynı — `location-photos` yerine `product-photos` bucket adını
+kullanın, sonra `products.image_url`'i public URL ile güncelleyin.
+
+Diğer ürünlerin (Espresso, Filtre Kahve, Earl Grey) henüz gerçek fotoğrafı
+yok — scaldcoffee.com'un kendi menü/ürün API'si boş döndüğü için menü
+içeriği büyük ölçüde placeholder'dır (bkz. ROADMAP.md Faz 0 notu). Gerçek
+menü/fiyat listesi geldiğinde admin panelden (`/dashboard/products`)
+güncellenebilir.
+
 ## İlk admin kullanıcısını oluşturma
 
 `profiles.is_admin` varsayılan olarak `false`'tur ve kendini admin yapma yolu

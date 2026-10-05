@@ -1,3 +1,4 @@
+import { Image } from 'expo-image';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -66,6 +67,14 @@ export default function MenuScreen() {
                   cartItems.find((item) => item.product.id === product.id)?.quantity ?? 0;
                 return (
                   <ThemedView key={product.id} type="backgroundElement" style={styles.productCard}>
+                    {product.imageUrl && (
+                      <Image
+                        source={{ uri: product.imageUrl }}
+                        style={styles.productPhoto}
+                        contentFit="cover"
+                        transition={200}
+                      />
+                    )}
                     <ThemedView style={styles.productInfo}>
                       <ThemedText type="default">{product.name}</ThemedText>
                       <ThemedText type="small" themeColor="textSecondary">
@@ -138,7 +147,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: Spacing.three,
     padding: Spacing.three,
-    gap: Spacing.two,
+    gap: Spacing.three,
+  },
+  productPhoto: {
+    width: 64,
+    height: 64,
+    borderRadius: Spacing.two,
   },
   productInfo: {
     flex: 1,

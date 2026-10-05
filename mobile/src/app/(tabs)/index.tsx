@@ -1,3 +1,4 @@
+import { Image } from 'expo-image';
 import { StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -15,7 +16,10 @@ export default function HomeScreen() {
   const { data: products } = useProducts();
   const { data: promotions } = usePromotions();
   const { isConfigured, user, profile } = useAuth();
-  const featured = products.slice(0, 3);
+  // Fotoğrafı olan ürünleri öne al, görsel olarak daha çekici bir "Öne Çıkanlar" olsun.
+  const featured = [...products]
+    .sort((a, b) => Number(Boolean(b.imageUrl)) - Number(Boolean(a.imageUrl)))
+    .slice(0, 3);
 
   const loyaltyPoints = isConfigured ? (profile?.loyaltyPoints ?? 0) : mockLoyaltySummary.points;
   const greetingName = isConfigured ? (profile?.fullName ?? user?.email ?? 'Hoş geldin') : 'Hoş geldin';
@@ -62,6 +66,14 @@ export default function HomeScreen() {
           <ThemedText type="smallBold">Öne Çıkanlar</ThemedText>
           {featured.map((product) => (
             <ThemedView key={product.id} type="backgroundElement" style={styles.productRow}>
+              {product.imageUrl && (
+                <Image
+                  source={{ uri: product.imageUrl }}
+                  style={styles.productPhoto}
+                  contentFit="cover"
+                  transition={200}
+                />
+              )}
               <ThemedView style={styles.productInfo}>
                 <ThemedText type="default">{product.name}</ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
@@ -108,7 +120,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: Spacing.three,
     padding: Spacing.three,
-    gap: Spacing.two,
+    gap: Spacing.three,
+  },
+  productPhoto: {
+    width: 56,
+    height: 56,
+    borderRadius: Spacing.two,
   },
   productInfo: {
     flex: 1,
