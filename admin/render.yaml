@@ -2,7 +2,7 @@ services:
   - type: web
     name: scald-admin
     runtime: node
-    plan: starter
+    plan: free
     region: frankfurt
     buildCommand: npm install && npm run build
     startCommand: npm run start

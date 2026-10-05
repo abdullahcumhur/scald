@@ -143,19 +143,33 @@ uygulamada bu bir QR kod olarak gösterilecek ve panel QR okutarak dolduracak
 
 ## Yayına alma (Render)
 
-Panel Render'da standart bir Node web servisi olarak çalışır (`npm run build`
-→ `npm run start`). Repoda bir `render.yaml` (Blueprint) hazır:
+Panel Render'da standart bir Node **Web Service** olarak çalışır (`npm run
+build` → `npm run start`) — **Static Site OLARAK ÇALIŞMAZ**, çünkü
+`app/api/*` altında server-side route'lar (bildirim gönderme, sipariş durumu
+bildirimi) var; Static Site sadece dosya sunar, sunucu kodu çalıştırmaz.
+Render'ın "Free" planı hem Web Service hem Static Site için mevcuttur, yani
+ücretsiz kalmak için Static Site seçmenize gerek yok — doğru seçim Web
+Service + Free plan. Repoda bir `render.yaml` (Blueprint) hazır, `plan: free`
+olarak ayarlı:
 
 1. [Render Dashboard](https://dashboard.render.com) → **New** → **Blueprint**
    → bu GitHub reposunu seçin. Render, `admin/render.yaml`'ı otomatik bulur
+   ve doğru servis tipini (Web Service) + ücretsiz planı kendisi kurar
    (repo kökünde değil `admin/` altında olduğu için "Root Directory" alanını
    `admin` olarak ayarlamanız gerekebilir — Blueprint sihirbazında sorulur).
+   - *Blueprint yerine elle "New → Web Service" ile kurarsanız:* Root
+     Directory `admin`, Build Command `npm install && npm run build`, Start
+     Command `npm run start`, Instance Type **Free** seçin.
 2. Servis oluşturulurken `NEXT_PUBLIC_SUPABASE_URL`,
    `NEXT_PUBLIC_SUPABASE_ANON_KEY` ve `SUPABASE_SERVICE_ROLE_KEY` ortam
    değişkenlerini girin (Supabase Dashboard → Project Settings → API'den
    alınır, bkz. yukarıdaki "Ortam değişkenleri" bölümü).
 3. İlk deploy birkaç dakika sürer; bittiğinde `https://scald-admin.onrender.com`
    gibi bir URL verir.
+4. **Free plan notu:** 15 dakika kullanılmayınca servis uyur, sıradaki istek
+   ~30-60 saniye gecikmeli açılır. Günlük sık kullanılan bir araç için bu
+   can sıkıcıysa ileride ücretli Starter plana geçilebilir — ama başlangıç
+   için Free tamamen yeterli.
 
 ### Kendi domaininize bağlama
 
@@ -175,8 +189,3 @@ karışmaz ve ayrı bir DNS kaydıyla yönetilir:
    ```
 4. DNS yayılması genelde birkaç dakika–birkaç saat sürer. Render SSL
    sertifikasını otomatik sağlar.
-
-Render ücretsiz katmanında servis 15 dakika kullanılmayınca uyur, sıradaki
-istek ~30-60 saniye gecikmeli açılır. Günlük kullanılan bir iç araç için
-bu rahatsız ediciyse ücretli (Starter) plana geçmek bu gecikmeyi ortadan
-kaldırır.
