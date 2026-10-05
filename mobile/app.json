@@ -14,16 +14,18 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false,
-      "config": {
-        "googleMaps": {
-          "apiKey": "TODO_GOOGLE_MAPS_API_KEY"
-        }
-      }
+      "predictiveBackGestureEnabled": false
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/favicon.png",
+      "name": "Scald Coffee",
+      "shortName": "Scald",
+      "lang": "tr",
+      "backgroundColor": "#ffffff",
+      "themeColor": "#140A61",
+      "display": "standalone",
+      "orientation": "portrait"
     },
     "plugins": [
       "expo-router",

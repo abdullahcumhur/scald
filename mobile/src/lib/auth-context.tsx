@@ -23,6 +23,10 @@ export type Profile = {
   fullName: string | null;
   phone: string | null;
   loyaltyPoints: number;
+  // Kahve damgası kartı — loyaltyPoints'ten tamamen ayrı, harcama tutarından
+  // bağımsız ikinci sadakat mekaniği (bkz. backend/supabase/migrations/0008_coffee_stamps.sql).
+  coffeeStamps: number;
+  freeCoffees: number;
 };
 
 type ProfileRow = {
@@ -30,6 +34,8 @@ type ProfileRow = {
   full_name: string | null;
   phone: string | null;
   loyalty_points: number | null;
+  coffee_stamps: number | null;
+  free_coffees: number | null;
 };
 
 function mapProfile(row: ProfileRow): Profile {
@@ -38,6 +44,8 @@ function mapProfile(row: ProfileRow): Profile {
     fullName: row.full_name,
     phone: row.phone,
     loyaltyPoints: row.loyalty_points ?? 0,
+    coffeeStamps: row.coffee_stamps ?? 0,
+    freeCoffees: row.free_coffees ?? 0,
   };
 }
 
@@ -63,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loadProfile = useCallback(async (userId: string) => {
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, full_name, phone, loyalty_points')
+      .select('id, full_name, phone, loyalty_points, coffee_stamps, free_coffees')
       .eq('id', userId)
       .single();
 
