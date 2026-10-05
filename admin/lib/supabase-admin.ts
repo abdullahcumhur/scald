@@ -22,7 +22,6 @@ if (!supabaseUrl || !supabaseServiceRoleKey) {
   // ama server'da gerçekten kullanılmaya çalışılırsa net bir hata
   // fırlatıyoruz.
   if (typeof window === "undefined" && process.env.NODE_ENV !== "production") {
-    // eslint-disable-next-line no-console
     console.warn(
       "NEXT_PUBLIC_SUPABASE_URL ve SUPABASE_SERVICE_ROLE_KEY env değişkenleri eksik. " +
         "Bkz. admin/README.md ve admin/.env.local.example."
