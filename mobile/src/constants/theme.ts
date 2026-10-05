@@ -18,6 +18,8 @@ export const Colors = {
     backgroundSelected: '#E3E5F2',
     textSecondary: '#5B5F6D',
     primary: '#140A61',
+    // Ana sayfadaki "Hazır Al" CTA kartı ve kampanya rozetleri için sıcak vurgu rengi.
+    accent: '#F2B134',
   },
   dark: {
     text: '#F4F5F8',
@@ -26,6 +28,7 @@ export const Colors = {
     backgroundSelected: '#272A3C',
     textSecondary: '#A7ABBD',
     primary: '#8B93E8',
+    accent: '#F2B134',
   },
 } as const;
 

@@ -1,4 +1,5 @@
 import { Image } from 'expo-image';
+import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -31,11 +32,18 @@ export default function MenuScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <ThemedText type="title" style={styles.title}>
-          Menü
-        </ThemedText>
+      <ThemedView type="primary" style={styles.header}>
+        <SafeAreaView edges={['top']}>
+          <ThemedView type="primary" style={styles.headerRow}>
+            <Ionicons name="restaurant" size={20} color="#ffffff" />
+            <ThemedText type="subtitle" style={styles.headerTitle}>
+              Menü
+            </ThemedText>
+          </ThemedView>
+        </SafeAreaView>
+      </ThemedView>
 
+      <ThemedView style={styles.body}>
         {isLoading ? (
           <LoadingState />
         ) : (
@@ -49,9 +57,12 @@ export default function MenuScreen() {
                 return (
                   <Pressable key={category.id} onPress={() => setSelectedCategoryId(category.id)}>
                     <ThemedView
-                      type={isActive ? 'backgroundSelected' : 'backgroundElement'}
+                      type={isActive ? 'primary' : 'backgroundElement'}
                       style={styles.categoryChip}>
-                      <ThemedText type="smallBold" themeColor={isActive ? 'text' : 'textSecondary'}>
+                      <ThemedText
+                        type="smallBold"
+                        style={isActive ? styles.categoryChipTextActive : undefined}
+                        themeColor={isActive ? undefined : 'textSecondary'}>
                         {category.name}
                       </ThemedText>
                     </ThemedView>
@@ -61,7 +72,8 @@ export default function MenuScreen() {
             </ScrollView>
 
             <ScrollView
-              contentContainerStyle={[styles.productList, { paddingBottom: BottomTabInset }]}>
+              contentContainerStyle={[styles.productList, { paddingBottom: BottomTabInset }]}
+              showsVerticalScrollIndicator={false}>
               {visibleProducts.map((product) => {
                 const cartQuantity =
                   cartItems.find((item) => item.product.id === product.id)?.quantity ?? 0;
@@ -75,18 +87,21 @@ export default function MenuScreen() {
                         transition={200}
                       />
                     )}
-                    <ThemedView style={styles.productInfo}>
+                    <ThemedView style={styles.productInfo} lightColor="transparent" darkColor="transparent">
                       <ThemedText type="default">{product.name}</ThemedText>
                       <ThemedText type="small" themeColor="textSecondary">
                         {product.description}
                       </ThemedText>
                       {cartQuantity > 0 && (
-                        <ThemedText type="small" themeColor="primary">
-                          Sepette: {cartQuantity}
-                        </ThemedText>
+                        <ThemedView type="backgroundSelected" style={styles.quantityBadge}>
+                          <Ionicons name="cart" size={12} color={theme.primary} />
+                          <ThemedText type="small" themeColor="primary" style={styles.quantityBadgeText}>
+                            Sepette {cartQuantity}
+                          </ThemedText>
+                        </ThemedView>
                       )}
                     </ThemedView>
-                    <ThemedView style={styles.productActions}>
+                    <ThemedView style={styles.productActions} lightColor="transparent" darkColor="transparent">
                       <ThemedText type="smallBold">{product.price}₺</ThemedText>
                       <Pressable
                         onPress={() => addItem(product)}
@@ -94,6 +109,7 @@ export default function MenuScreen() {
                           styles.addButton,
                           { backgroundColor: theme.primary, opacity: pressed ? 0.7 : 1 },
                         ]}>
+                        <Ionicons name="bag-add-outline" size={15} color="#ffffff" />
                         <ThemedText type="smallBold" style={styles.addButtonText}>
                           Ekle
                         </ThemedText>
@@ -110,7 +126,7 @@ export default function MenuScreen() {
             </ScrollView>
           </>
         )}
-      </SafeAreaView>
+      </ThemedView>
     </ThemedView>
   );
 }
@@ -119,15 +135,26 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  safeArea: {
+  header: {
+    borderBottomLeftRadius: Spacing.five,
+    borderBottomRightRadius: Spacing.five,
+    paddingBottom: Spacing.three,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    paddingHorizontal: Spacing.four,
+    paddingTop: Spacing.three,
+  },
+  headerTitle: {
+    color: '#ffffff',
+  },
+  body: {
     flex: 1,
     paddingHorizontal: Spacing.four,
-    gap: Spacing.three,
-  },
-  title: {
-    fontSize: 32,
-    lineHeight: 38,
     paddingTop: Spacing.three,
+    gap: Spacing.three,
   },
   categoryRow: {
     gap: Spacing.two,
@@ -138,6 +165,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.two,
   },
+  categoryChipTextActive: {
+    color: '#ffffff',
+  },
   productList: {
     gap: Spacing.three,
   },
@@ -145,7 +175,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderRadius: Spacing.three,
+    borderRadius: Spacing.four,
     padding: Spacing.three,
     gap: Spacing.three,
   },
@@ -157,15 +187,27 @@ const styles = StyleSheet.create({
   productInfo: {
     flex: 1,
     gap: Spacing.half,
-    backgroundColor: 'transparent',
   },
   productActions: {
     alignItems: 'flex-end',
     gap: Spacing.one,
-    backgroundColor: 'transparent',
   },
+  quantityBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.half,
+    alignSelf: 'flex-start',
+    marginTop: Spacing.half,
+    paddingHorizontal: Spacing.two,
+    paddingVertical: Spacing.half,
+    borderRadius: Spacing.five,
+  },
+  quantityBadgeText: {},
   addButton: {
-    borderRadius: Spacing.two,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.half,
+    borderRadius: Spacing.five,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.one,
   },

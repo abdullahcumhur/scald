@@ -1,9 +1,11 @@
 import { Image } from 'expo-image';
+import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   TextInput,
   View,
@@ -55,104 +57,151 @@ export function AuthScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={styles.flex} edges={['bottom']}>
         <KeyboardAvoidingView
           style={styles.flex}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <View style={styles.content}>
-            <View style={styles.logoWrapper}>
-              <Image
-                source={require('@/assets/images/brand/scald-logo.png')}
-                style={styles.logo}
-                contentFit="contain"
-              />
-            </View>
-            <ThemedText type="small" themeColor="textSecondary" style={styles.subtitle}>
-              {mode === 'login' ? 'Hesabınla giriş yap' : 'Yeni bir hesap oluştur'}
-            </ThemedText>
-
-            {signupDone ? (
-              <ThemedView type="backgroundElement" style={styles.infoCard}>
-                <ThemedText type="default">Kayıt başarılı!</ThemedText>
-                <ThemedText type="small" themeColor="textSecondary">
-                  E-postana gelen doğrulama bağlantısına tıkladıktan sonra giriş yapabilirsin.
-                </ThemedText>
-                <Pressable
-                  onPress={() => {
-                    setMode('login');
-                    setSignupDone(false);
-                  }}>
-                  <ThemedText type="linkPrimary" themeColor="primary">
-                    Giriş ekranına dön
-                  </ThemedText>
-                </Pressable>
-              </ThemedView>
-            ) : (
-              <>
-                <View style={styles.form}>
-                  {mode === 'signup' && (
-                    <TextInput
-                      value={fullName}
-                      onChangeText={setFullName}
-                      placeholder="Ad Soyad"
-                      placeholderTextColor={theme.textSecondary}
-                      autoCapitalize="words"
-                      style={[styles.input, { color: theme.text, borderColor: theme.backgroundSelected }]}
-                    />
-                  )}
-                  <TextInput
-                    value={email}
-                    onChangeText={setEmail}
-                    placeholder="E-posta"
-                    placeholderTextColor={theme.textSecondary}
-                    autoCapitalize="none"
-                    autoComplete="email"
-                    keyboardType="email-address"
-                    style={[styles.input, { color: theme.text, borderColor: theme.backgroundSelected }]}
-                  />
-                  <TextInput
-                    value={password}
-                    onChangeText={setPassword}
-                    placeholder="Şifre"
-                    placeholderTextColor={theme.textSecondary}
-                    secureTextEntry
-                    autoCapitalize="none"
-                    style={[styles.input, { color: theme.text, borderColor: theme.backgroundSelected }]}
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}>
+            <ThemedView type="primary" style={styles.hero}>
+              <SafeAreaView edges={['top']}>
+                <View style={styles.logoWrapper}>
+                  <Image
+                    source={require('@/assets/images/brand/scald-logo.png')}
+                    style={styles.logo}
+                    contentFit="contain"
                   />
                 </View>
+                <ThemedText type="subtitle" style={styles.heroTitle}>
+                  Scald&apos;e Hoş Geldin
+                </ThemedText>
+                <ThemedText type="small" style={styles.heroSubtitle}>
+                  {mode === 'login' ? 'Hesabınla giriş yap' : 'Yeni bir hesap oluştur'}
+                </ThemedText>
+              </SafeAreaView>
+            </ThemedView>
 
-                {error && (
-                  <ThemedText type="small" style={styles.error}>
-                    {error}
-                  </ThemedText>
+            <View style={styles.cardWrapper}>
+              <ThemedView type="backgroundElement" style={styles.card}>
+                {signupDone ? (
+                  <View style={styles.successState}>
+                    <View style={[styles.successIcon, { backgroundColor: theme.backgroundSelected }]}>
+                      <Ionicons name="checkmark-circle" size={40} color={theme.primary} />
+                    </View>
+                    <ThemedText type="default" style={styles.successTitle}>
+                      Kayıt başarılı!
+                    </ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary" style={styles.successBody}>
+                      E-postana gelen doğrulama bağlantısına tıkladıktan sonra giriş yapabilirsin.
+                    </ThemedText>
+                    <Pressable
+                      onPress={() => {
+                        setMode('login');
+                        setSignupDone(false);
+                      }}
+                      style={styles.successLink}>
+                      <ThemedText type="linkPrimary" themeColor="primary">
+                        Giriş ekranına dön
+                      </ThemedText>
+                    </Pressable>
+                  </View>
+                ) : (
+                  <>
+                    <View style={styles.form}>
+                      {mode === 'signup' && (
+                        <View
+                          style={[
+                            styles.inputRow,
+                            { backgroundColor: theme.background, borderColor: theme.backgroundSelected },
+                          ]}>
+                          <Ionicons name="person-outline" size={20} color={theme.textSecondary} />
+                          <TextInput
+                            value={fullName}
+                            onChangeText={setFullName}
+                            placeholder="Ad Soyad"
+                            placeholderTextColor={theme.textSecondary}
+                            autoCapitalize="words"
+                            style={[styles.input, { color: theme.text }]}
+                          />
+                        </View>
+                      )}
+                      <View
+                        style={[
+                          styles.inputRow,
+                          { backgroundColor: theme.background, borderColor: theme.backgroundSelected },
+                        ]}>
+                        <Ionicons name="mail-outline" size={20} color={theme.textSecondary} />
+                        <TextInput
+                          value={email}
+                          onChangeText={setEmail}
+                          placeholder="E-posta"
+                          placeholderTextColor={theme.textSecondary}
+                          autoCapitalize="none"
+                          autoComplete="email"
+                          keyboardType="email-address"
+                          style={[styles.input, { color: theme.text }]}
+                        />
+                      </View>
+                      <View
+                        style={[
+                          styles.inputRow,
+                          { backgroundColor: theme.background, borderColor: theme.backgroundSelected },
+                        ]}>
+                        <Ionicons name="lock-closed-outline" size={20} color={theme.textSecondary} />
+                        <TextInput
+                          value={password}
+                          onChangeText={setPassword}
+                          placeholder="Şifre"
+                          placeholderTextColor={theme.textSecondary}
+                          secureTextEntry
+                          autoCapitalize="none"
+                          style={[styles.input, { color: theme.text }]}
+                        />
+                      </View>
+                    </View>
+
+                    {error && (
+                      <View style={styles.errorBox}>
+                        <Ionicons name="alert-circle" size={18} color="#D3453B" />
+                        <ThemedText type="small" style={styles.error}>
+                          {error}
+                        </ThemedText>
+                      </View>
+                    )}
+
+                    <Pressable
+                      onPress={handleSubmit}
+                      disabled={submitting}
+                      style={({ pressed }) => [
+                        styles.submitButton,
+                        { backgroundColor: theme.primary, opacity: pressed || submitting ? 0.7 : 1 },
+                      ]}>
+                      <ThemedText type="smallBold" style={styles.submitButtonText}>
+                        {submitting ? 'Lütfen bekleyin...' : mode === 'login' ? 'Giriş Yap' : 'Kayıt Ol'}
+                      </ThemedText>
+                      {!submitting && <Ionicons name="arrow-forward" size={18} color="#ffffff" />}
+                    </Pressable>
+
+                    <Pressable
+                      onPress={() => {
+                        setMode(mode === 'login' ? 'signup' : 'login');
+                        setError(null);
+                      }}
+                      style={styles.switchModeRow}>
+                      <ThemedText type="small" themeColor="textSecondary">
+                        {mode === 'login' ? 'Hesabın yok mu?' : 'Zaten hesabın var mı?'}
+                      </ThemedText>
+                      <ThemedText type="smallBold" themeColor="primary">
+                        {mode === 'login' ? ' Kayıt ol' : ' Giriş yap'}
+                      </ThemedText>
+                    </Pressable>
+                  </>
                 )}
-
-                <Pressable
-                  onPress={handleSubmit}
-                  disabled={submitting}
-                  style={({ pressed }) => [
-                    styles.submitButton,
-                    { backgroundColor: theme.primary, opacity: pressed || submitting ? 0.7 : 1 },
-                  ]}>
-                  <ThemedText type="smallBold" style={styles.submitButtonText}>
-                    {submitting ? 'Lütfen bekleyin...' : mode === 'login' ? 'Giriş Yap' : 'Kayıt Ol'}
-                  </ThemedText>
-                </Pressable>
-
-                <Pressable
-                  onPress={() => {
-                    setMode(mode === 'login' ? 'signup' : 'login');
-                    setError(null);
-                  }}>
-                  <ThemedText type="small" themeColor="textSecondary" style={styles.switchModeText}>
-                    {mode === 'login'
-                      ? 'Hesabın yok mu? Kayıt ol'
-                      : 'Zaten hesabın var mı? Giriş yap'}
-                  </ThemedText>
-                </Pressable>
-              </>
-            )}
-          </View>
+              </ThemedView>
+            </View>
+          </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
     </ThemedView>
@@ -166,57 +215,117 @@ const styles = StyleSheet.create({
   flex: {
     flex: 1,
   },
-  safeArea: {
-    flex: 1,
+  scrollContent: {
+    paddingBottom: Spacing.six,
   },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
+  hero: {
+    alignItems: 'center',
     paddingHorizontal: Spacing.four,
-    gap: Spacing.three,
+    paddingTop: Spacing.three,
+    paddingBottom: Spacing.six,
+    gap: Spacing.two,
+    borderBottomLeftRadius: Spacing.five,
+    borderBottomRightRadius: Spacing.five,
   },
   logoWrapper: {
     alignSelf: 'center',
     backgroundColor: '#ffffff',
     borderRadius: Spacing.three,
-    paddingVertical: Spacing.three,
-    paddingHorizontal: Spacing.five,
+    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.four,
+    marginBottom: Spacing.two,
   },
   logo: {
-    width: 220,
-    height: 66,
+    width: 180,
+    height: 54,
   },
-  subtitle: {
+  heroTitle: {
+    color: '#ffffff',
     textAlign: 'center',
-    marginBottom: Spacing.three,
+  },
+  heroSubtitle: {
+    color: 'rgba(255,255,255,0.78)',
+    textAlign: 'center',
+  },
+  cardWrapper: {
+    paddingHorizontal: Spacing.four,
+    marginTop: -Spacing.five,
+  },
+  card: {
+    borderRadius: Spacing.four,
+    padding: Spacing.four,
+    gap: Spacing.three,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 4,
   },
   form: {
     gap: Spacing.three,
   },
-  input: {
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
     borderWidth: 1,
     borderRadius: Spacing.three,
     paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.three,
+    paddingVertical: Spacing.two,
+  },
+  input: {
+    flex: 1,
     fontSize: 16,
+    paddingVertical: Spacing.one,
+  },
+  errorBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    backgroundColor: 'rgba(211,69,59,0.12)',
+    borderRadius: Spacing.three,
+    padding: Spacing.three,
   },
   error: {
+    flex: 1,
     color: '#D3453B',
   },
   submitButton: {
-    borderRadius: Spacing.three,
-    paddingVertical: Spacing.three,
+    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
+    gap: Spacing.two,
+    borderRadius: Spacing.four,
+    paddingVertical: Spacing.three,
   },
   submitButtonText: {
     color: '#ffffff',
   },
-  switchModeText: {
+  switchModeRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+  },
+  successState: {
+    alignItems: 'center',
+    paddingVertical: Spacing.two,
+    gap: Spacing.two,
+  },
+  successIcon: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.one,
+  },
+  successTitle: {
     textAlign: 'center',
   },
-  infoCard: {
-    borderRadius: Spacing.four,
-    padding: Spacing.four,
-    gap: Spacing.two,
+  successBody: {
+    textAlign: 'center',
+  },
+  successLink: {
+    marginTop: Spacing.two,
   },
 });

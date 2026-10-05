@@ -6,6 +6,7 @@
 // butonunu gösterir. Ödeme mağazada yapılır; bu ekran yalnızca rezervasyon
 // oluşturur.
 
+import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -82,6 +83,21 @@ function statusLabel(status: ActiveOrder['status']): string {
   }
 }
 
+function CartHeader({ title, icon }: { title: string; icon: keyof typeof Ionicons.glyphMap }) {
+  return (
+    <ThemedView type="primary" style={styles.header}>
+      <SafeAreaView edges={['top']}>
+        <ThemedView type="primary" style={styles.headerRow}>
+          <Ionicons name={icon} size={20} color="#ffffff" />
+          <ThemedText type="subtitle" style={styles.headerTitle}>
+            {title}
+          </ThemedText>
+        </ThemedView>
+      </SafeAreaView>
+    </ThemedView>
+  );
+}
+
 export default function CartScreen() {
   const theme = useTheme();
   const { isConfigured, user } = useAuth();
@@ -134,36 +150,19 @@ export default function CartScreen() {
     setSubmitting(true);
     setError(null);
 
-    const { data: order, error: insertOrderError } = await supabase
-      .from('orders')
-      .insert({
-        user_id: user.id,
-        location_id: selectedLocationId,
-        requested_minutes: requestedMinutes,
-        total_amount: totalPrice,
-        note: null,
-      })
-      .select()
-      .single();
-
-    if (insertOrderError || !order) {
-      setError(insertOrderError?.message ?? 'Rezervasyon oluşturulamadı.');
-      setSubmitting(false);
-      return;
-    }
-
-    const { error: insertItemsError } = await supabase.from('order_items').insert(
-      items.map((item) => ({
-        order_id: order.id,
+    const { data: order, error: createOrderError } = await supabase.rpc('create_order', {
+      p_location_id: selectedLocationId,
+      p_requested_minutes: requestedMinutes,
+      p_items: items.map((item) => ({
         product_id: item.product.id,
         product_name: item.product.name,
         unit_price: item.product.price,
         quantity: item.quantity,
-      }))
-    );
+      })),
+    });
 
-    if (insertItemsError) {
-      setError(insertItemsError.message);
+    if (createOrderError || !order) {
+      setError(createOrderError?.message ?? 'Rezervasyon oluşturulamadı.');
       setSubmitting(false);
       return;
     }
@@ -176,14 +175,12 @@ export default function CartScreen() {
   if (!isConfigured) {
     return (
       <ThemedView style={styles.container}>
-        <SafeAreaView style={styles.safeArea} edges={['top']}>
-          <ThemedText type="title" style={styles.title}>
-            Sepet
-          </ThemedText>
+        <CartHeader title="Sepet" icon="cart" />
+        <ThemedView style={styles.body}>
           <ThemedText type="small" themeColor="textSecondary">
             Bu özellik için Supabase yapılandırması gerekiyor.
           </ThemedText>
-        </SafeAreaView>
+        </ThemedView>
       </ThemedView>
     );
   }
@@ -191,12 +188,10 @@ export default function CartScreen() {
   if (activeOrderLoading) {
     return (
       <ThemedView style={styles.container}>
-        <SafeAreaView style={styles.safeArea} edges={['top']}>
-          <ThemedText type="title" style={styles.title}>
-            Sepet
-          </ThemedText>
+        <CartHeader title="Sepet" icon="cart" />
+        <ThemedView style={styles.body}>
           <LoadingState />
-        </SafeAreaView>
+        </ThemedView>
       </ThemedView>
     );
   }
@@ -204,35 +199,55 @@ export default function CartScreen() {
   if (activeOrder) {
     return (
       <ThemedView style={styles.container}>
-        <SafeAreaView style={styles.safeArea} edges={['top']}>
-          <ThemedText type="title" style={styles.title}>
-            Siparişin
-          </ThemedText>
+        <CartHeader title="Siparişin" icon="receipt" />
 
-          <ScrollView contentContainerStyle={[styles.list, { paddingBottom: BottomTabInset }]}>
+        <ThemedView style={styles.body}>
+          <ScrollView
+            contentContainerStyle={[styles.list, { paddingBottom: BottomTabInset }]}
+            showsVerticalScrollIndicator={false}>
             <ThemedView type="backgroundElement" style={styles.pickupCard}>
+              <ThemedView type="backgroundSelected" style={styles.pickupIconWrap}>
+                <Ionicons
+                  name={activeOrder.status === 'ready' ? 'checkmark-circle' : 'time'}
+                  size={30}
+                  color={theme.primary}
+                />
+              </ThemedView>
               <ThemedText type="small" themeColor="textSecondary">
                 Teslim Kodun
               </ThemedText>
               <ThemedText type="title" themeColor="primary" style={styles.pickupCode}>
                 {activeOrder.pickupCode}
               </ThemedText>
-              <ThemedText type="subtitle">{statusLabel(activeOrder.status)}</ThemedText>
-              {activeOrder.locationName ? (
-                <ThemedText type="small" themeColor="textSecondary">
-                  {activeOrder.locationName}
+              <ThemedView type="backgroundSelected" style={styles.statusPill}>
+                <ThemedText type="smallBold" themeColor="primary">
+                  {statusLabel(activeOrder.status)}
                 </ThemedText>
+              </ThemedView>
+              {activeOrder.locationName ? (
+                <ThemedView style={styles.infoRow} lightColor="transparent" darkColor="transparent">
+                  <Ionicons name="location-outline" size={14} color={theme.textSecondary} />
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {activeOrder.locationName}
+                  </ThemedText>
+                </ThemedView>
               ) : null}
-              <ThemedText type="small" themeColor="textSecondary">
-                Tahmini süre: {activeOrder.requestedMinutes} dk
-              </ThemedText>
+              <ThemedView style={styles.infoRow} lightColor="transparent" darkColor="transparent">
+                <Ionicons name="time-outline" size={14} color={theme.textSecondary} />
+                <ThemedText type="small" themeColor="textSecondary">
+                  Tahmini süre: {activeOrder.requestedMinutes} dk
+                </ThemedText>
+              </ThemedView>
             </ThemedView>
 
             <ThemedView style={styles.section}>
-              <ThemedText type="smallBold">Sipariş Kalemleri</ThemedText>
+              <ThemedView style={styles.sectionHeaderRow} lightColor="transparent" darkColor="transparent">
+                <Ionicons name="receipt-outline" size={16} color={theme.text} />
+                <ThemedText type="smallBold">Sipariş Kalemleri</ThemedText>
+              </ThemedView>
               {activeOrder.items.map((item) => (
                 <ThemedView key={item.id} type="backgroundElement" style={styles.itemRow}>
-                  <ThemedView style={styles.itemInfo}>
+                  <ThemedView style={styles.itemInfo} lightColor="transparent" darkColor="transparent">
                     <ThemedText type="default">{item.name}</ThemedText>
                     <ThemedText type="small" themeColor="textSecondary">
                       {item.quantity} adet
@@ -248,28 +263,32 @@ export default function CartScreen() {
               <ThemedText type="smallBold">{activeOrder.totalAmount}₺</ThemedText>
             </ThemedView>
           </ScrollView>
-        </SafeAreaView>
+        </ThemedView>
       </ThemedView>
     );
   }
 
   return (
     <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <ThemedText type="title" style={styles.title}>
-          Sepet
-        </ThemedText>
+      <CartHeader title="Sepet" icon="cart" />
 
+      <ThemedView style={styles.body}>
         {items.length === 0 ? (
           <ThemedText type="small" themeColor="textSecondary">
             Sepetin boş. Menüden ürün ekleyerek başlayabilirsin.
           </ThemedText>
         ) : (
-          <ScrollView contentContainerStyle={[styles.list, { paddingBottom: BottomTabInset }]}>
+          <ScrollView
+            contentContainerStyle={[styles.list, { paddingBottom: BottomTabInset }]}
+            showsVerticalScrollIndicator={false}>
             <ThemedView style={styles.section}>
+              <ThemedView style={styles.sectionHeaderRow} lightColor="transparent" darkColor="transparent">
+                <Ionicons name="cart-outline" size={16} color={theme.text} />
+                <ThemedText type="smallBold">Ürünler</ThemedText>
+              </ThemedView>
               {items.map((item) => (
                 <ThemedView key={item.product.id} type="backgroundElement" style={styles.itemRow}>
-                  <ThemedView style={styles.itemInfo}>
+                  <ThemedView style={styles.itemInfo} lightColor="transparent" darkColor="transparent">
                     <ThemedText type="default">{item.product.name}</ThemedText>
                     <ThemedText type="small" themeColor="textSecondary">
                       {item.product.price}₺ / adet
@@ -280,13 +299,13 @@ export default function CartScreen() {
                       </ThemedText>
                     </Pressable>
                   </ThemedView>
-                  <ThemedView style={styles.itemActions}>
-                    <ThemedView style={styles.stepper}>
+                  <ThemedView style={styles.itemActions} lightColor="transparent" darkColor="transparent">
+                    <ThemedView style={styles.stepper} lightColor="transparent" darkColor="transparent">
                       <Pressable
                         onPress={() => updateQuantity(item.product.id, item.quantity - 1)}
                         hitSlop={8}
-                        style={styles.stepperButton}>
-                        <ThemedText type="smallBold">−</ThemedText>
+                        style={[styles.stepperButton, { backgroundColor: theme.backgroundSelected }]}>
+                        <Ionicons name="remove" size={15} color={theme.primary} />
                       </Pressable>
                       <ThemedText type="smallBold" style={styles.stepperValue}>
                         {item.quantity}
@@ -294,8 +313,8 @@ export default function CartScreen() {
                       <Pressable
                         onPress={() => updateQuantity(item.product.id, item.quantity + 1)}
                         hitSlop={8}
-                        style={styles.stepperButton}>
-                        <ThemedText type="smallBold">+</ThemedText>
+                        style={[styles.stepperButton, { backgroundColor: theme.backgroundSelected }]}>
+                        <Ionicons name="add" size={15} color={theme.primary} />
                       </Pressable>
                     </ThemedView>
                     <ThemedText type="smallBold">{item.product.price * item.quantity}₺</ThemedText>
@@ -310,7 +329,10 @@ export default function CartScreen() {
             </ThemedView>
 
             <ThemedView style={styles.section}>
-              <ThemedText type="smallBold">Şube Seç</ThemedText>
+              <ThemedView style={styles.sectionHeaderRow} lightColor="transparent" darkColor="transparent">
+                <Ionicons name="location-outline" size={16} color={theme.text} />
+                <ThemedText type="smallBold">Şube Seç</ThemedText>
+              </ThemedView>
               {locationsLoading ? (
                 <ThemedText type="small" themeColor="textSecondary">
                   Yükleniyor...
@@ -335,16 +357,22 @@ export default function CartScreen() {
             </ThemedView>
 
             <ThemedView style={styles.section}>
-              <ThemedText type="smallBold">Tahmini Süre</ThemedText>
-              <ThemedView style={styles.minutesRow}>
+              <ThemedView style={styles.sectionHeaderRow} lightColor="transparent" darkColor="transparent">
+                <Ionicons name="time-outline" size={16} color={theme.text} />
+                <ThemedText type="smallBold">Tahmini Süre</ThemedText>
+              </ThemedView>
+              <ThemedView style={styles.minutesRow} lightColor="transparent" darkColor="transparent">
                 {REQUESTED_MINUTES_OPTIONS.map((minutes) => {
                   const isSelected = minutes === requestedMinutes;
                   return (
                     <Pressable key={minutes} onPress={() => setRequestedMinutes(minutes)} style={styles.minuteButtonWrapper}>
                       <ThemedView
-                        type={isSelected ? 'backgroundSelected' : 'backgroundElement'}
+                        type={isSelected ? 'primary' : 'backgroundElement'}
                         style={styles.minuteButton}>
-                        <ThemedText type="smallBold" themeColor={isSelected ? 'text' : 'textSecondary'}>
+                        <ThemedText
+                          type="smallBold"
+                          style={isSelected ? styles.minuteButtonTextActive : undefined}
+                          themeColor={isSelected ? undefined : 'textSecondary'}>
                           {minutes} dk
                         </ThemedText>
                       </ThemedView>
@@ -355,9 +383,12 @@ export default function CartScreen() {
             </ThemedView>
 
             {error && (
-              <ThemedText type="small" style={styles.errorText}>
-                {error}
-              </ThemedText>
+              <ThemedView style={styles.errorBox}>
+                <Ionicons name="alert-circle" size={18} color="#D3453B" />
+                <ThemedText type="small" style={styles.errorText}>
+                  {error}
+                </ThemedText>
+              </ThemedView>
             )}
 
             <Pressable
@@ -373,10 +404,11 @@ export default function CartScreen() {
               <ThemedText type="smallBold" style={styles.submitButtonText}>
                 {submitting ? 'Oluşturuluyor...' : 'Rezervasyonu Oluştur'}
               </ThemedText>
+              {!submitting && <Ionicons name="arrow-forward" size={18} color="#ffffff" />}
             </Pressable>
           </ScrollView>
         )}
-      </SafeAreaView>
+      </ThemedView>
     </ThemedView>
   );
 }
@@ -385,15 +417,26 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  safeArea: {
+  header: {
+    borderBottomLeftRadius: Spacing.five,
+    borderBottomRightRadius: Spacing.five,
+    paddingBottom: Spacing.three,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    paddingHorizontal: Spacing.four,
+    paddingTop: Spacing.three,
+  },
+  headerTitle: {
+    color: '#ffffff',
+  },
+  body: {
     flex: 1,
     paddingHorizontal: Spacing.four,
-    gap: Spacing.three,
-  },
-  title: {
-    fontSize: 32,
-    lineHeight: 38,
     paddingTop: Spacing.three,
+    gap: Spacing.three,
   },
   list: {
     gap: Spacing.four,
@@ -401,29 +444,31 @@ const styles = StyleSheet.create({
   section: {
     gap: Spacing.two,
   },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
+  },
   itemRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderRadius: Spacing.three,
+    borderRadius: Spacing.four,
     padding: Spacing.three,
     gap: Spacing.two,
   },
   itemInfo: {
     flex: 1,
     gap: Spacing.half,
-    backgroundColor: 'transparent',
   },
   itemActions: {
     alignItems: 'flex-end',
     gap: Spacing.two,
-    backgroundColor: 'transparent',
   },
   stepper: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
-    backgroundColor: 'transparent',
   },
   stepperButton: {
     width: 28,
@@ -431,7 +476,6 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.06)',
   },
   stepperValue: {
     minWidth: 20,
@@ -444,34 +488,48 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderRadius: Spacing.three,
+    borderRadius: Spacing.four,
     padding: Spacing.three,
   },
   locationRow: {
-    borderRadius: Spacing.three,
+    borderRadius: Spacing.four,
     padding: Spacing.three,
     gap: Spacing.half,
   },
   minutesRow: {
     flexDirection: 'row',
     gap: Spacing.two,
-    backgroundColor: 'transparent',
   },
   minuteButtonWrapper: {
     flex: 1,
   },
   minuteButton: {
-    borderRadius: Spacing.three,
+    borderRadius: Spacing.five,
     paddingVertical: Spacing.three,
     alignItems: 'center',
   },
+  minuteButtonTextActive: {
+    color: '#ffffff',
+  },
+  errorBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    backgroundColor: 'rgba(211,69,59,0.12)',
+    borderRadius: Spacing.three,
+    padding: Spacing.three,
+  },
   errorText: {
+    flex: 1,
     color: '#D3453B',
   },
   submitButton: {
-    borderRadius: Spacing.three,
-    paddingVertical: Spacing.three,
+    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
+    gap: Spacing.two,
+    borderRadius: Spacing.four,
+    paddingVertical: Spacing.three,
   },
   submitButtonText: {
     color: '#ffffff',
@@ -482,7 +540,27 @@ const styles = StyleSheet.create({
     gap: Spacing.one,
     alignItems: 'center',
   },
+  pickupIconWrap: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.one,
+  },
   pickupCode: {
     letterSpacing: 4,
+  },
+  statusPill: {
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.one,
+    borderRadius: Spacing.five,
+    marginTop: Spacing.half,
+    marginBottom: Spacing.one,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
   },
 });

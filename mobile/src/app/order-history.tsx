@@ -2,6 +2,7 @@
 // listeleyen ekran. `app-tabs.tsx`'te tanımlı değil, bu yüzden sekme çubuğunda
 // görünmez; `profile.tsx`'ten `router.push('/order-history')` ile açılır.
 
+import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -12,6 +13,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, Spacing } from '@/constants/theme';
 import { useAuth } from '@/lib/auth-context';
+import { useTheme } from '@/hooks/use-theme';
 import { supabase } from '@/lib/supabase';
 
 const HISTORY_STATUSES = ['completed', 'cancelled'] as const;
@@ -64,12 +66,21 @@ function statusColor(status: HistoryOrder['status']): string {
   return status === 'completed' ? '#2E7D32' : '#D3453B';
 }
 
+function statusIcon(status: HistoryOrder['status']): keyof typeof Ionicons.glyphMap {
+  return status === 'completed' ? 'checkmark-circle' : 'close-circle';
+}
+
+function statusBadgeBackground(status: HistoryOrder['status']): string {
+  return status === 'completed' ? 'rgba(46,125,50,0.12)' : 'rgba(211,69,59,0.12)';
+}
+
 function formatDate(isoDate: string): string {
   return new Date(isoDate).toLocaleDateString('tr-TR');
 }
 
 export default function OrderHistoryScreen() {
   const router = useRouter();
+  const theme = useTheme();
   const { isConfigured, user } = useAuth();
 
   const [orders, setOrders] = useState<HistoryOrder[]>([]);
@@ -109,13 +120,14 @@ export default function OrderHistoryScreen() {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <ThemedView style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backButton}>
-            <ThemedText type="title" themeColor="primary" style={styles.backIcon}>
-              ‹
-            </ThemedText>
+        <ThemedView style={styles.header} lightColor="transparent" darkColor="transparent">
+          <Pressable
+            onPress={() => router.back()}
+            hitSlop={12}
+            style={[styles.backButton, { backgroundColor: theme.backgroundElement }]}>
+            <Ionicons name="chevron-back" size={20} color={theme.text} />
           </Pressable>
-          <ThemedText type="title" style={styles.title}>
+          <ThemedText type="subtitle" style={styles.title}>
             Sipariş Geçmişi
           </ThemedText>
         </ThemedView>
@@ -131,21 +143,27 @@ export default function OrderHistoryScreen() {
             Henüz geçmiş siparişin yok.
           </ThemedText>
         ) : (
-          <ScrollView contentContainerStyle={[styles.list, { paddingBottom: BottomTabInset }]}>
+          <ScrollView
+            contentContainerStyle={[styles.list, { paddingBottom: BottomTabInset }]}
+            showsVerticalScrollIndicator={false}>
             {orders.map((order) => (
               <ThemedView key={order.id} type="backgroundElement" style={styles.card}>
-                <ThemedView style={styles.cardHeader}>
+                <ThemedView style={styles.cardHeader} lightColor="transparent" darkColor="transparent">
                   <ThemedText type="small" themeColor="textSecondary">
                     {formatDate(order.createdAt)}
                   </ThemedText>
-                  <ThemedText type="smallBold" style={{ color: statusColor(order.status) }}>
-                    {statusLabel(order.status)}
-                  </ThemedText>
+                  <ThemedView
+                    style={[styles.statusBadge, { backgroundColor: statusBadgeBackground(order.status) }]}>
+                    <Ionicons name={statusIcon(order.status)} size={13} color={statusColor(order.status)} />
+                    <ThemedText type="small" style={{ color: statusColor(order.status) }}>
+                      {statusLabel(order.status)}
+                    </ThemedText>
+                  </ThemedView>
                 </ThemedView>
 
                 {order.locationName ? <ThemedText type="default">{order.locationName}</ThemedText> : null}
 
-                <ThemedView style={styles.itemsList}>
+                <ThemedView style={styles.itemsList} lightColor="transparent" darkColor="transparent">
                   {order.items.map((item) => (
                     <ThemedText key={item.id} type="small" themeColor="textSecondary">
                       {item.name} x {item.quantity}
@@ -153,7 +171,7 @@ export default function OrderHistoryScreen() {
                   ))}
                 </ThemedView>
 
-                <ThemedView style={styles.totalRow}>
+                <ThemedView style={styles.totalRow} lightColor="transparent" darkColor="transparent">
                   <ThemedText type="smallBold">Toplam</ThemedText>
                   <ThemedText type="smallBold">{order.totalAmount}₺</ThemedText>
                 </ThemedView>
@@ -178,27 +196,24 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.two,
+    gap: Spacing.three,
     paddingTop: Spacing.three,
-    backgroundColor: 'transparent',
   },
   backButton: {
-    paddingRight: Spacing.one,
-  },
-  backIcon: {
-    fontSize: 32,
-    lineHeight: 36,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   title: {
     flex: 1,
-    fontSize: 32,
-    lineHeight: 38,
   },
   list: {
     gap: Spacing.three,
   },
   card: {
-    borderRadius: Spacing.three,
+    borderRadius: Spacing.four,
     padding: Spacing.four,
     gap: Spacing.two,
   },
@@ -206,17 +221,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: 'transparent',
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.half,
+    paddingHorizontal: Spacing.two,
+    paddingVertical: Spacing.half,
+    borderRadius: Spacing.five,
   },
   itemsList: {
     gap: Spacing.half,
-    backgroundColor: 'transparent',
   },
   totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: Spacing.one,
-    backgroundColor: 'transparent',
   },
 });
