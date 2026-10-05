@@ -1,11 +1,17 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
+import { Html5Qrcode } from "html5-qrcode";
 import { supabase } from "@/lib/supabase";
 import type { LoyaltyTransactionType, Profile } from "@/lib/database.types";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Mobil uygulamadaki sadakat QR kodu, kullanıcının Supabase Auth user id'sini
+// ham bir UUID string olarak kodluyor (bkz. mobile/src/app/(tabs)/profile.tsx
+// içindeki `<QRCode value={user.id} ... />`) — başka bir format/prefix yok.
+const QR_READER_ELEMENT_ID = "loyalty-qr-reader";
 
 export default function LoyaltyPage() {
   const [userId, setUserId] = useState("");
@@ -15,6 +21,81 @@ export default function LoyaltyPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resultProfile, setResultProfile] = useState<Profile | null>(null);
+
+  const [scanning, setScanning] = useState(false);
+  const [scanError, setScanError] = useState<string | null>(null);
+  const [scanSuccessId, setScanSuccessId] = useState<string | null>(null);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+
+  // Kamera tarayıcıyı sadece `scanning` true olduğunda başlatıyoruz, ve
+  // component unmount olduğunda (ya da `scanning` false'a döndüğünde) her
+  // zaman stop/clear çağırıp kamerayı kapatıyoruz.
+  useEffect(() => {
+    if (!scanning) return;
+
+    let cancelled = false;
+    const html5Qrcode = new Html5Qrcode(QR_READER_ELEMENT_ID);
+    scannerRef.current = html5Qrcode;
+
+    async function run() {
+      try {
+        await html5Qrcode.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 250, height: 250 } },
+          (decodedText) => {
+            if (cancelled) return;
+            const trimmed = decodedText.trim();
+            if (!UUID_RE.test(trimmed)) {
+              setScanError("Geçersiz QR kodu: beklenen UUID formatında değil.");
+              return;
+            }
+            cancelled = true;
+            setUserId(trimmed);
+            setScanSuccessId(trimmed);
+            setScanError(null);
+            setScanning(false);
+          },
+          () => {
+            // Her karede QR bulunamadığında tetiklenir, görmezden geliyoruz.
+          }
+        );
+      } catch (err) {
+        if (!cancelled) {
+          setScanError(
+            `Kameraya erişilemedi: ${err instanceof Error ? err.message : String(err)}`
+          );
+          setScanning(false);
+        }
+      }
+    }
+
+    run();
+
+    return () => {
+      cancelled = true;
+      scannerRef.current = null;
+      if (html5Qrcode.isScanning) {
+        html5Qrcode
+          .stop()
+          .then(() => html5Qrcode.clear())
+          .catch(() => {
+            // Taramayı durdururken hata olsa da sayfadan ayrılıyoruz, yutuyoruz.
+          });
+      } else {
+        html5Qrcode.clear();
+      }
+    };
+  }, [scanning]);
+
+  function startScan() {
+    setScanError(null);
+    setScanSuccessId(null);
+    setScanning(true);
+  }
+
+  function cancelScan() {
+    setScanning(false);
+  }
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -76,9 +157,47 @@ export default function LoyaltyPage() {
       <h1 className="mb-6 text-lg font-semibold text-neutral-900">Sadakat Puanı</h1>
       <p className="mb-6 text-sm text-neutral-500">
         Kasada müşterinin User ID&apos;sini girip puan kazandırın veya harcayın.
-        İleride mobil uygulamada bu bir QR kod olarak gösterilecek; şimdilik
-        manuel UUID girişi yeterli.
+        Müşterinin mobil uygulamadaki sadakat QR kodunu kamerayla tarayarak
+        User ID&apos;yi otomatik doldurabilir, ya da elle girebilirsiniz.
       </p>
+
+      <div className="mb-6 rounded-lg border border-neutral-200 bg-white p-4">
+        {!scanning ? (
+          <button
+            type="button"
+            onClick={startScan}
+            className="w-full rounded-md bg-brand px-3 py-2 text-sm font-medium text-white hover:bg-brand-hover"
+          >
+            📷 QR Kodu Tara
+          </button>
+        ) : (
+          <div>
+            <div
+              id={QR_READER_ELEMENT_ID}
+              className="mx-auto w-full max-w-[400px] overflow-hidden rounded-md bg-neutral-900"
+            />
+            <button
+              type="button"
+              onClick={cancelScan}
+              className="mt-3 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm text-neutral-700 hover:bg-neutral-100"
+            >
+              İptal
+            </button>
+          </div>
+        )}
+
+        {scanError && (
+          <p className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+            {scanError}
+          </p>
+        )}
+
+        {scanSuccessId && !scanning && (
+          <p className="mt-3 rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">
+            QR okundu: {scanSuccessId.slice(0, 8)}…
+          </p>
+        )}
+      </div>
 
       <form
         onSubmit={handleSubmit}
