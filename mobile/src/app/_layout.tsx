@@ -9,6 +9,7 @@ import { useAppFonts } from '@/hooks/use-app-fonts';
 import { useNotificationHistoryListener } from '@/hooks/use-notification-history';
 import { AuthProvider, useAuth } from '@/lib/auth-context';
 import { CartProvider } from '@/lib/cart-context';
+import { FavoritesProvider } from '@/lib/favorites-context';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -39,6 +40,9 @@ function RootNavigator() {
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="order-history" options={{ presentation: 'card' }} />
       <Stack.Screen name="notification-settings" options={{ presentation: 'card' }} />
+      <Stack.Screen name="locations" options={{ presentation: 'card' }} />
+      <Stack.Screen name="product/[id]" options={{ presentation: 'card' }} />
+      <Stack.Screen name="favorites" options={{ presentation: 'card' }} />
     </Stack>
   );
 }
@@ -60,8 +64,10 @@ export default function TabLayout() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <AuthProvider>
         <CartProvider>
-          <AnimatedSplashOverlay />
-          <RootNavigator />
+          <FavoritesProvider>
+            <AnimatedSplashOverlay />
+            <RootNavigator />
+          </FavoritesProvider>
         </CartProvider>
       </AuthProvider>
     </ThemeProvider>

@@ -1,7 +1,7 @@
 // Supabase'den dönen snake_case satırları src/types/models.ts'deki camelCase
 // domain tiplerine çeviren saf dönüştürücü fonksiyonlar.
 
-import type { Category, Location, Product, Promotion } from '@/types/models';
+import type { Category, Location, Product, ProductOption, Promotion } from '@/types/models';
 
 type SupabaseCategoryRow = {
   id: string;
@@ -17,6 +17,7 @@ type SupabaseProductRow = {
   price: number | string;
   image_url: string | null;
   is_available: boolean;
+  options?: ProductOption[] | null;
 };
 
 type SupabaseLocationRow = {
@@ -58,6 +59,7 @@ export function mapProduct(row: SupabaseProductRow): Product {
     price: typeof row.price === 'string' ? Number(row.price) : row.price,
     imageUrl: row.image_url ?? undefined,
     isAvailable: row.is_available,
+    options: row.options && row.options.length > 0 ? row.options : undefined,
   };
 }
 

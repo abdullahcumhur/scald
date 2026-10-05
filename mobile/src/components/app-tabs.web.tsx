@@ -25,11 +25,11 @@ export default function AppTabs() {
           <TabTrigger name="menu" href="/menu" asChild>
             <TabButton>Menü</TabButton>
           </TabTrigger>
-          <TabTrigger name="locations" href="/locations" asChild>
-            <TabButton>Şubeler</TabButton>
-          </TabTrigger>
           <TabTrigger name="cart" href="/cart" asChild>
-            <TabButton>Sepet</TabButton>
+            <TabButton>Sipariş</TabButton>
+          </TabTrigger>
+          <TabTrigger name="scald-club" href="/scald-club" asChild>
+            <TabButton>Scald Club</TabButton>
           </TabTrigger>
           <TabTrigger name="profile" href="/profile" asChild>
             <TabButton>Profil</TabButton>

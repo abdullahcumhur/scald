@@ -22,14 +22,14 @@ export default function AppTabs() {
         <NativeTabs.Trigger.Icon sf="cup.and.saucer.fill" md="local_cafe" />
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="locations">
-        <NativeTabs.Trigger.Label>Şubeler</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf="mappin.and.ellipse" md="place" />
+      <NativeTabs.Trigger name="cart">
+        <NativeTabs.Trigger.Label>Sipariş</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="cart.fill" md="shopping_cart" />
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="cart">
-        <NativeTabs.Trigger.Label>Sepet</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf="cart.fill" md="shopping_cart" />
+      <NativeTabs.Trigger name="scald-club">
+        <NativeTabs.Trigger.Label>Scald Club</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="star.circle.fill" md="loyalty" />
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="profile">
