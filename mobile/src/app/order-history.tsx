@@ -2,17 +2,19 @@
 // listeleyen ekran. `app-tabs.tsx`'te tanımlı değil, bu yüzden sekme çubuğunda
 // görünmez; `profile.tsx`'ten `router.push('/order-history')` ile açılır.
 
-import { Ionicons } from '@expo/vector-icons';
-import { useCallback, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet } from 'react-native';
+import { Feather } from '@expo/vector-icons';
+import { useCallback, useMemo, useState } from 'react';
+import { Alert, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 
 import { LoadingState } from '@/components/loading-state';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { BottomTabInset, Spacing } from '@/constants/theme';
+import { BottomTabInset, Radius, Spacing } from '@/constants/theme';
+import { useProducts } from '@/hooks/use-supabase-data';
 import { useAuth } from '@/lib/auth-context';
+import { useCart } from '@/lib/cart-context';
 import { useTheme } from '@/hooks/use-theme';
 import { supabase } from '@/lib/supabase';
 
@@ -20,6 +22,7 @@ const HISTORY_STATUSES = ['completed', 'cancelled'] as const;
 
 type OrderItemRow = {
   id: string;
+  product_id: string | null;
   product_name: string;
   unit_price: number | string;
   quantity: number;
@@ -34,13 +37,20 @@ type HistoryOrderRow = {
   locations: { name: string } | null;
 };
 
+type HistoryOrderItem = {
+  id: string;
+  productId: string | null;
+  name: string;
+  quantity: number;
+};
+
 type HistoryOrder = {
   id: string;
   status: HistoryOrderRow['status'];
   totalAmount: number;
   createdAt: string;
   locationName: string;
-  items: { id: string; name: string; quantity: number }[];
+  items: HistoryOrderItem[];
 };
 
 function mapHistoryOrder(row: HistoryOrderRow): HistoryOrder {
@@ -52,6 +62,7 @@ function mapHistoryOrder(row: HistoryOrderRow): HistoryOrder {
     locationName: row.locations?.name ?? '',
     items: row.order_items.map((item) => ({
       id: item.id,
+      productId: item.product_id,
       name: item.product_name,
       quantity: item.quantity,
     })),
@@ -66,8 +77,8 @@ function statusColor(status: HistoryOrder['status']): string {
   return status === 'completed' ? '#2E7D32' : '#D3453B';
 }
 
-function statusIcon(status: HistoryOrder['status']): keyof typeof Ionicons.glyphMap {
-  return status === 'completed' ? 'checkmark-circle' : 'close-circle';
+function statusIcon(status: HistoryOrder['status']): keyof typeof Feather.glyphMap {
+  return status === 'completed' ? 'check-circle' : 'x-circle';
 }
 
 function statusBadgeBackground(status: HistoryOrder['status']): string {
@@ -82,9 +93,13 @@ export default function OrderHistoryScreen() {
   const router = useRouter();
   const theme = useTheme();
   const { isConfigured, user } = useAuth();
+  const { data: products } = useProducts();
+  const { addItem } = useCart();
 
   const [orders, setOrders] = useState<HistoryOrder[]>([]);
   const [loading, setLoading] = useState(isConfigured);
+
+  const productsById = useMemo(() => new Map(products.map((product) => [product.id, product])), [products]);
 
   const loadOrders = useCallback(async () => {
     if (!isConfigured || !user) {
@@ -117,6 +132,36 @@ export default function OrderHistoryScreen() {
     }, [loadOrders])
   );
 
+  function handleReorder(order: HistoryOrder) {
+    let addedCount = 0;
+    let hasUnavailable = false;
+
+    for (const item of order.items) {
+      const product = item.productId ? productsById.get(item.productId) : undefined;
+      if (!product) {
+        hasUnavailable = true;
+        continue;
+      }
+      for (let i = 0; i < item.quantity; i += 1) {
+        addItem(product);
+      }
+      addedCount += 1;
+    }
+
+    if (hasUnavailable) {
+      Alert.alert(
+        'Bazı ürünler artık mevcut değil',
+        addedCount > 0
+          ? 'Hâlâ menüde olan ürünler sepete eklendi, diğerleri atlandı.'
+          : 'Bu siparişteki ürünlerin hiçbiri artık menüde mevcut değil.'
+      );
+    }
+
+    if (addedCount > 0) {
+      router.push('/cart');
+    }
+  }
+
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -125,7 +170,7 @@ export default function OrderHistoryScreen() {
             onPress={() => router.back()}
             hitSlop={12}
             style={[styles.backButton, { backgroundColor: theme.backgroundElement }]}>
-            <Ionicons name="chevron-back" size={20} color={theme.text} />
+            <Feather name="chevron-left" size={20} color={theme.text} />
           </Pressable>
           <ThemedText type="subtitle" style={styles.title}>
             Sipariş Geçmişi
@@ -154,14 +199,19 @@ export default function OrderHistoryScreen() {
                   </ThemedText>
                   <ThemedView
                     style={[styles.statusBadge, { backgroundColor: statusBadgeBackground(order.status) }]}>
-                    <Ionicons name={statusIcon(order.status)} size={13} color={statusColor(order.status)} />
+                    <Feather name={statusIcon(order.status)} size={13} color={statusColor(order.status)} />
                     <ThemedText type="small" style={{ color: statusColor(order.status) }}>
                       {statusLabel(order.status)}
                     </ThemedText>
                   </ThemedView>
                 </ThemedView>
 
-                {order.locationName ? <ThemedText type="default">{order.locationName}</ThemedText> : null}
+                {order.locationName ? (
+                  <ThemedView style={styles.locationRow} lightColor="transparent" darkColor="transparent">
+                    <Feather name="map-pin" size={13} color={theme.textSecondary} />
+                    <ThemedText type="default">{order.locationName}</ThemedText>
+                  </ThemedView>
+                ) : null}
 
                 <ThemedView style={styles.itemsList} lightColor="transparent" darkColor="transparent">
                   {order.items.map((item) => (
@@ -175,6 +225,18 @@ export default function OrderHistoryScreen() {
                   <ThemedText type="smallBold">Toplam</ThemedText>
                   <ThemedText type="smallBold">{order.totalAmount}₺</ThemedText>
                 </ThemedView>
+
+                <Pressable
+                  onPress={() => handleReorder(order)}
+                  style={({ pressed }) => [
+                    styles.reorderButton,
+                    { backgroundColor: theme.primary, opacity: pressed ? 0.8 : 1 },
+                  ]}>
+                  <Feather name="refresh-cw" size={15} color="#ffffff" />
+                  <ThemedText type="smallBold" style={styles.reorderButtonText}>
+                    Tekrar Sipariş Ver
+                  </ThemedText>
+                </Pressable>
               </ThemedView>
             ))}
           </ScrollView>
@@ -213,7 +275,7 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
   },
   card: {
-    borderRadius: Spacing.four,
+    borderRadius: Radius.card,
     padding: Spacing.four,
     gap: Spacing.two,
   },
@@ -228,7 +290,12 @@ const styles = StyleSheet.create({
     gap: Spacing.half,
     paddingHorizontal: Spacing.two,
     paddingVertical: Spacing.half,
-    borderRadius: Spacing.five,
+    borderRadius: Radius.pill,
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
   },
   itemsList: {
     gap: Spacing.half,
@@ -238,5 +305,17 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: Spacing.one,
+  },
+  reorderButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.one,
+    marginTop: Spacing.one,
+    paddingVertical: Spacing.two,
+    borderRadius: Radius.button,
+  },
+  reorderButtonText: {
+    color: '#ffffff',
   },
 });

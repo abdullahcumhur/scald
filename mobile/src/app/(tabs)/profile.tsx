@@ -1,46 +1,69 @@
+import { Feather } from '@expo/vector-icons';
 import QRCode from 'react-native-qrcode-svg';
-import { Linking, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { BottomTabInset, Spacing } from '@/constants/theme';
-import { mockLoyaltySummary } from '@/data/mock';
+import { BottomTabInset, Radius, Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth-context';
+
+const STAMPS_GOAL = 6;
 
 type ProfileMenuItem = {
   id: string;
   label: string;
+  icon: keyof typeof Feather.glyphMap;
+  onPress: () => void;
 };
-
-const profileMenuItems: ProfileMenuItem[] = [
-  { id: 'order-history', label: 'Sipariş Geçmişi' },
-  { id: 'favorites', label: 'Favoriler' },
-  { id: 'notification-settings', label: 'Bildirim Ayarları' },
-];
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const theme = useTheme();
   const { isConfigured, user, profile, signOut } = useAuth();
 
-  function handleMenuItemPress(id: string) {
-    if (id === 'order-history') {
-      router.push('/order-history');
-      return;
-    }
-    if (id === 'notification-settings') {
-      router.push('/notification-settings');
-      return;
-    }
-    // Henüz işlevsiz — ileride ilgili ekrana yönlendirme / aksiyon eklenecek.
-    console.log(`Profile menu item pressed: ${id}`);
-  }
-
-  // Supabase henüz yapılandırılmadıysa (misafir/demo modu) sabit mock veriyle göster.
+  // Supabase henüz yapılandırılmadıysa (misafir/demo modu) sabit değerlerle göster.
   const displayName = isConfigured ? (profile?.fullName ?? 'Scald Üyesi') : 'Misafir Kullanıcı';
   const displayEmail = isConfigured ? (user?.email ?? '') : 'misafir@scaldcoffee.com';
-  const loyaltyPoints = isConfigured ? (profile?.loyaltyPoints ?? 0) : mockLoyaltySummary.points;
+  const coffeeStamps = isConfigured ? (profile?.coffeeStamps ?? 0) : 0;
+  const clampedStamps = Math.min(Math.max(coffeeStamps, 0), STAMPS_GOAL);
+  const initial = (displayName.trim().charAt(0) || 'S').toUpperCase();
+
+  const menuItems: ProfileMenuItem[] = [
+    {
+      id: 'order-history',
+      label: 'Siparişlerim',
+      icon: 'shopping-bag',
+      onPress: () => router.push('/order-history'),
+    },
+    {
+      id: 'favorites',
+      label: 'Favorilerim',
+      icon: 'heart',
+      onPress: () => router.push('/favorites'),
+    },
+    {
+      id: 'scald-club',
+      label: 'Ödüller',
+      icon: 'gift',
+      onPress: () => router.push('/scald-club'),
+    },
+    {
+      id: 'notification-settings',
+      label: 'Bildirimler',
+      icon: 'bell',
+      onPress: () => router.push('/notification-settings'),
+    },
+    {
+      id: 'settings',
+      label: 'Ayarlar',
+      icon: 'settings',
+      // Henüz özel bir ayarlar ekranı yok — ileride ilgili ekrana yönlendirme eklenecek.
+      onPress: () => console.log('Profile menu item pressed: settings'),
+    },
+  ];
 
   return (
     <ThemedView style={styles.container}>
@@ -49,21 +72,34 @@ export default function ProfileScreen() {
           Profil
         </ThemedText>
 
-        <ScrollView contentContainerStyle={[styles.list, { paddingBottom: BottomTabInset }]}>
+        <ScrollView
+          contentContainerStyle={[styles.list, { paddingBottom: BottomTabInset }]}
+          showsVerticalScrollIndicator={false}>
           <ThemedView type="backgroundElement" style={styles.userCard}>
-            <ThemedText type="subtitle">{displayName}</ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              {displayEmail}
-            </ThemedText>
-            <ThemedText type="small" themeColor="textSecondary" style={styles.userCardSpacing}>
-              Sadakat Puanın
-            </ThemedText>
-            <ThemedText type="subtitle" themeColor="primary">
-              {loyaltyPoints} puan
-            </ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              {mockLoyaltySummary.tier} · bir sonraki seviye {mockLoyaltySummary.nextTierAt} puan
-            </ThemedText>
+            <View style={styles.userRow}>
+              <View style={[styles.avatar, { backgroundColor: theme.backgroundSelected }]}>
+                <ThemedText type="subtitle" themeColor="primary" style={styles.avatarText}>
+                  {initial}
+                </ThemedText>
+              </View>
+              <View style={styles.userInfo}>
+                <ThemedText type="subtitle" numberOfLines={1} style={styles.userName}>
+                  {displayName}
+                </ThemedText>
+                {!!displayEmail && (
+                  <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+                    {displayEmail}
+                  </ThemedText>
+                )}
+              </View>
+            </View>
+
+            <View style={[styles.stampsPill, { backgroundColor: theme.backgroundSelected }]}>
+              <Feather name="coffee" size={14} color={theme.primary} />
+              <ThemedText type="small" themeColor="primary" style={styles.stampsPillText}>
+                {clampedStamps}/{STAMPS_GOAL} damga
+              </ThemedText>
+            </View>
           </ThemedView>
 
           {isConfigured && user && (
@@ -72,24 +108,35 @@ export default function ProfileScreen() {
               <ThemedText type="small" themeColor="textSecondary" style={styles.qrHint}>
                 Kasada bu kodu göster, puanların otomatik yüklensin.
               </ThemedText>
-              <ThemedView style={styles.qrWrapper}>
-                <QRCode value={user.id} size={180} />
-              </ThemedView>
+              <View style={styles.qrWrapper}>
+                <QRCode value={user.id} size={170} />
+              </View>
             </ThemedView>
           )}
 
-          <ThemedView style={styles.section}>
-            {profileMenuItems.map((item) => (
-              <Pressable key={item.id} onPress={() => handleMenuItemPress(item.id)}>
+          <View style={styles.section}>
+            {menuItems.map((item) => (
+              <Pressable key={item.id} onPress={item.onPress}>
                 <ThemedView type="backgroundElement" style={styles.menuRow}>
-                  <ThemedText type="default">{item.label}</ThemedText>
+                  <View style={styles.menuRowLeft}>
+                    <View style={[styles.menuIconWrap, { backgroundColor: theme.backgroundSelected }]}>
+                      <Feather name={item.icon} size={16} color={theme.primary} />
+                    </View>
+                    <ThemedText type="default">{item.label}</ThemedText>
+                  </View>
+                  <Feather name="chevron-right" size={18} color={theme.textSecondary} />
                 </ThemedView>
               </Pressable>
             ))}
 
             <Pressable onPress={() => Linking.openURL('https://www.instagram.com/scald.coffee/')}>
               <ThemedView type="backgroundElement" style={styles.menuRow}>
-                <ThemedText type="default">Instagram&apos;da Takip Et</ThemedText>
+                <View style={styles.menuRowLeft}>
+                  <View style={[styles.menuIconWrap, { backgroundColor: theme.backgroundSelected }]}>
+                    <Feather name="instagram" size={16} color={theme.primary} />
+                  </View>
+                  <ThemedText type="default">Instagram&apos;da Takip Et</ThemedText>
+                </View>
                 <ThemedText type="small" themeColor="textSecondary">
                   @scald.coffee
                 </ThemedText>
@@ -99,13 +146,18 @@ export default function ProfileScreen() {
             {isConfigured && user && (
               <Pressable onPress={() => signOut()}>
                 <ThemedView type="backgroundElement" style={styles.menuRow}>
-                  <ThemedText type="default" style={styles.signOutText}>
-                    Çıkış Yap
-                  </ThemedText>
+                  <View style={styles.menuRowLeft}>
+                    <View style={styles.menuIconWrapDanger}>
+                      <Feather name="log-out" size={16} color="#D3453B" />
+                    </View>
+                    <ThemedText type="default" style={styles.signOutText}>
+                      Çıkış Yap
+                    </ThemedText>
+                  </View>
                 </ThemedView>
               </Pressable>
             )}
-          </ThemedView>
+          </View>
         </ScrollView>
       </SafeAreaView>
     </ThemedView>
@@ -130,15 +182,46 @@ const styles = StyleSheet.create({
     gap: Spacing.four,
   },
   userCard: {
-    borderRadius: Spacing.four,
+    borderRadius: Radius.card,
     padding: Spacing.four,
+    gap: Spacing.three,
+  },
+  userRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+  },
+  avatar: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    fontSize: 24,
+    lineHeight: 28,
+  },
+  userInfo: {
+    flex: 1,
+    gap: Spacing.half,
+  },
+  userName: {
+    fontSize: 22,
+    lineHeight: 26,
+  },
+  stampsPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: Spacing.one,
+    alignSelf: 'flex-start',
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.one,
+    borderRadius: Radius.pill,
   },
-  userCardSpacing: {
-    marginTop: Spacing.two,
-  },
+  stampsPillText: {},
   qrCard: {
-    borderRadius: Spacing.four,
+    borderRadius: Radius.loyalty,
     padding: Spacing.four,
     gap: Spacing.one,
     alignItems: 'center',
@@ -153,14 +236,35 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
   },
   section: {
-    gap: Spacing.three,
+    gap: Spacing.two,
   },
   menuRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderRadius: Spacing.three,
+    borderRadius: Radius.card,
     padding: Spacing.three,
+  },
+  menuRowLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+    flexShrink: 1,
+  },
+  menuIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  menuIconWrapDanger: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(211,69,59,0.12)',
   },
   signOutText: {
     color: '#D3453B',
