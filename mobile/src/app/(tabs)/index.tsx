@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import { Feather } from '@expo/vector-icons';
+import { Feather, MaterialIcons } from '@expo/vector-icons';
 import { useRouter, type Href } from 'expo-router';
 import { useMemo } from 'react';
 import {
@@ -96,7 +96,7 @@ export default function HomeScreen() {
                   { backgroundColor: theme.backgroundElement, opacity: pressed ? 0.7 : 1 },
                 ]}
                 hitSlop={8}>
-                <Feather name="maximize" size={19} color={theme.text} />
+                <MaterialIcons name="qr-code-2" size={20} color={theme.text} />
               </Pressable>
             </View>
           </View>

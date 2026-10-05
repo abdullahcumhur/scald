@@ -14,7 +14,7 @@
 // çözülecek şekilde genişletilebilir. Bu dosya o native kamera/izin işini
 // kapsamıyor — sadece akışın UI iskeletini sağlıyor.
 
-import { Feather } from '@expo/vector-icons';
+import { Feather, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, StyleSheet } from 'react-native';
@@ -142,7 +142,7 @@ function DefaultTrigger({ onPress }: { onPress: () => void }) {
   return (
     <ThemedView type="backgroundElement" style={styles.triggerCard}>
       <ThemedView style={[styles.triggerIcon, { backgroundColor: theme.backgroundSelected }]}>
-        <Feather name="maximize" size={20} color={theme.primary} />
+        <MaterialIcons name="qr-code-scanner" size={20} color={theme.primary} />
       </ThemedView>
       <ThemedView style={styles.triggerTextGroup} lightColor="transparent" darkColor="transparent">
         <ThemedText type="smallBold">Masada mısın?</ThemedText>
