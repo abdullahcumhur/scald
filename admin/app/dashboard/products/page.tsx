@@ -32,6 +32,7 @@ export default function ProductsPage() {
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   async function fetchData() {
     setLoading(true);
@@ -111,6 +112,28 @@ export default function ProductsPage() {
     await fetchData();
   }
 
+  async function handleImageUpload(file: File) {
+    setUploading(true);
+    setError(null);
+
+    const extension = file.name.includes(".") ? file.name.split(".").pop() : undefined;
+    const path = `${Date.now()}-${crypto.randomUUID()}${extension ? `.${extension}` : ""}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("product-photos")
+      .upload(path, file, { upsert: true });
+
+    if (uploadError) {
+      setError(uploadError.message);
+      setUploading(false);
+      return;
+    }
+
+    const { data } = supabase.storage.from("product-photos").getPublicUrl(path);
+    setForm((prev) => ({ ...prev, image_url: data.publicUrl }));
+    setUploading(false);
+  }
+
   async function handleDelete(id: string) {
     if (!confirm("Bu ürünü silmek istediğinize emin misiniz?")) return;
     const { error: deleteError } = await supabase.from("products").delete().eq("id", id);
@@ -183,7 +206,29 @@ export default function ProductsPage() {
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-sm text-neutral-700">Görsel URL</label>
+              <label className="mb-1 block text-sm text-neutral-700">Görsel</label>
+              <input
+                type="file"
+                accept="image/*"
+                disabled={uploading}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) void handleImageUpload(file);
+                  e.target.value = "";
+                }}
+                className="block w-full text-sm text-neutral-700 disabled:opacity-50"
+              />
+              {uploading && (
+                <p className="mt-1 text-xs text-neutral-500">Yükleniyor...</p>
+              )}
+              {form.image_url && (
+                <img
+                  src={form.image_url}
+                  alt="Ürün görseli önizleme"
+                  className="mt-2 h-20 w-20 rounded-md border border-neutral-200 object-cover"
+                />
+              )}
+              <label className="mb-1 mt-2 block text-sm text-neutral-700">Görsel URL</label>
               <input
                 value={form.image_url}
                 onChange={(e) => setForm({ ...form, image_url: e.target.value })}

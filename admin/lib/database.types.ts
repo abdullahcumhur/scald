@@ -29,6 +29,7 @@ export type Location = {
   lng: number | null;
   phone: string | null;
   opening_hours: unknown | null;
+  image_url: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -49,6 +50,8 @@ export type Profile = {
   full_name: string | null;
   phone: string | null;
   loyalty_points: number;
+  coffee_stamps: number;
+  free_coffees: number;
   is_admin: boolean;
   created_at: string;
   updated_at: string;
@@ -61,6 +64,19 @@ export type LoyaltyTransaction = {
   user_id: string;
   points: number;
   type: LoyaltyTransactionType;
+  note: string | null;
+  created_at: string;
+};
+
+// Şema: backend/supabase/migrations/0008_coffee_stamps.sql — para/harcama
+// tutarından bağımsız, kahve adedine bağlı ikinci (ayrı) sadakat mekaniği.
+// loyalty_points/loyalty_transactions'tan tamamen bağımsızdır.
+export type CoffeeStampTransactionType = "stamp" | "redeem_free_coffee";
+
+export type CoffeeStampTransaction = {
+  id: string;
+  user_id: string;
+  type: CoffeeStampTransactionType;
   note: string | null;
   created_at: string;
 };

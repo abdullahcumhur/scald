@@ -12,6 +12,7 @@ type FormState = {
   lng: string;
   phone: string;
   opening_hours: string;
+  image_url: string;
 };
 
 const EMPTY_FORM: FormState = {
@@ -22,6 +23,7 @@ const EMPTY_FORM: FormState = {
   lng: "",
   phone: "",
   opening_hours: "",
+  image_url: "",
 };
 
 export default function LocationsPage() {
@@ -31,6 +33,7 @@ export default function LocationsPage() {
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   async function fetchLocations() {
     setLoading(true);
@@ -71,8 +74,31 @@ export default function LocationsPage() {
       opening_hours: location.opening_hours
         ? JSON.stringify(location.opening_hours, null, 2)
         : "",
+      image_url: location.image_url ?? "",
     });
     setShowForm(true);
+  }
+
+  async function handleImageUpload(file: File) {
+    setUploading(true);
+    setError(null);
+
+    const extension = file.name.includes(".") ? file.name.split(".").pop() : undefined;
+    const path = `${Date.now()}-${crypto.randomUUID()}${extension ? `.${extension}` : ""}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("location-photos")
+      .upload(path, file, { upsert: true });
+
+    if (uploadError) {
+      setError(uploadError.message);
+      setUploading(false);
+      return;
+    }
+
+    const { data } = supabase.storage.from("location-photos").getPublicUrl(path);
+    setForm((prev) => ({ ...prev, image_url: data.publicUrl }));
+    setUploading(false);
   }
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
@@ -98,6 +124,7 @@ export default function LocationsPage() {
       lng: form.lng.trim() ? Number(form.lng) : null,
       phone: form.phone.trim() || null,
       opening_hours: openingHours,
+      image_url: form.image_url.trim() || null,
     };
 
     const { error: saveError } = form.id
@@ -206,6 +233,37 @@ export default function LocationsPage() {
                 rows={3}
                 placeholder='{"mon_sun": "08:00-22:00"}'
                 className="w-full rounded-md border border-neutral-300 px-3 py-2 font-mono text-xs"
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="mb-1 block text-sm text-neutral-700">Görsel</label>
+              <input
+                type="file"
+                accept="image/*"
+                disabled={uploading}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) void handleImageUpload(file);
+                  e.target.value = "";
+                }}
+                className="block w-full text-sm text-neutral-700 disabled:opacity-50"
+              />
+              {uploading && (
+                <p className="mt-1 text-xs text-neutral-500">Yükleniyor...</p>
+              )}
+              {form.image_url && (
+                <img
+                  src={form.image_url}
+                  alt="Şube görseli önizleme"
+                  className="mt-2 h-20 w-20 rounded-md border border-neutral-200 object-cover"
+                />
+              )}
+              <label className="mb-1 mt-2 block text-sm text-neutral-700">Görsel URL</label>
+              <input
+                value={form.image_url}
+                onChange={(e) => setForm({ ...form, image_url: e.target.value })}
+                className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
+                placeholder="https://..."
               />
             </div>
           </div>

@@ -27,6 +27,12 @@ export default function LoyaltyPage() {
   const [scanSuccessId, setScanSuccessId] = useState<string | null>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
 
+  // Kahve damgası kartı — puan sisteminden tamamen ayrı, aynı taranan/elle
+  // girilen `userId`'yi kullanır (bkz. backend/supabase/migrations/0008_coffee_stamps.sql).
+  const [coffeeProfile, setCoffeeProfile] = useState<Profile | null>(null);
+  const [stampSubmitting, setStampSubmitting] = useState(false);
+  const [redeemSubmitting, setRedeemSubmitting] = useState(false);
+
   // Kamera tarayıcıyı sadece `scanning` true olduğunda başlatıyoruz, ve
   // component unmount olduğunda (ya da `scanning` false'a döndüğünde) her
   // zaman stop/clear çağırıp kamerayı kapatıyoruz.
@@ -87,10 +93,148 @@ export default function LoyaltyPage() {
     };
   }, [scanning]);
 
+  // `userId` geçerli bir UUID'ye dönüştüğünde (QR tarandığında ya da elle
+  // tam girildiğinde) kahve damgası kartı için müşterinin güncel
+  // coffee_stamps/free_coffees'ini otomatik çeker. Puan formunun submit akışından
+  // tamamen bağımsız — barista sadece damga eklemek/ücretsiz kahve kullanmak
+  // istediğinde puan formuna hiç dokunmayabilir.
+  useEffect(() => {
+    const trimmed = userId.trim();
+    if (!UUID_RE.test(trimmed)) {
+      // Girdi henüz tam/geçerli bir UUID değil (ör. kullanıcı elle yazıyor) —
+      // bir önceki müşterinin kartını burada temizlemiyoruz (setState'i effect
+      // gövdesinde senkron çağırmamak için); yeni bir tarama başladığında
+      // startScan() zaten kartı sıfırlıyor.
+      return;
+    }
+
+    let cancelled = false;
+
+    supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", trimmed)
+      .single<Profile>()
+      .then(({ data, error: fetchError }) => {
+        if (cancelled) return;
+        setCoffeeProfile(fetchError ? null : data);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
+  async function fetchCoffeeProfile(id: string): Promise<Profile | null> {
+    const { data, error: fetchError } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", id)
+      .single<Profile>();
+
+    if (fetchError) {
+      setError(fetchError.message);
+      return null;
+    }
+    return data;
+  }
+
+  // Kahve damgası 6'ya ulaşıp bir ücretsiz kahve kazanıldığında müşteriye push
+  // bildirimi gönderir (fire-and-forget) — notifyOrderStatus
+  // (admin/app/dashboard/orders/page.tsx) ile aynı non-blocking desen.
+  function notifyCoffeeReward(targetUserId: string) {
+    (async () => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+      if (!accessToken) return;
+
+      await fetch("/api/notify-coffee-reward", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId: targetUserId }),
+      });
+    })().catch((err) => console.error("notify-coffee-reward failed", err));
+  }
+
+  async function handleAddStamp() {
+    const trimmedUserId = userId.trim();
+    if (!UUID_RE.test(trimmedUserId)) {
+      setError("Müşteri User ID geçerli bir UUID olmalı.");
+      return;
+    }
+
+    setError(null);
+    setStampSubmitting(true);
+
+    const previousFreeCoffees = coffeeProfile?.free_coffees ?? 0;
+
+    const { error: insertError } = await supabase.from("coffee_stamp_transactions").insert({
+      user_id: trimmedUserId,
+      type: "stamp",
+    });
+
+    if (insertError) {
+      setError(insertError.message);
+      setStampSubmitting(false);
+      return;
+    }
+
+    // apply_coffee_stamp_transaction() trigger'ı (bkz. 0008_coffee_stamps.sql)
+    // coffee_stamps/free_coffees'i otomatik günceller — burada güncel değeri
+    // tekrar okuyup, bir rollover (6. damga -> 0'a sıfırlanma + free_coffees++)
+    // olup olmadığını anlıyoruz.
+    const updatedProfile = await fetchCoffeeProfile(trimmedUserId);
+    if (updatedProfile) {
+      setCoffeeProfile(updatedProfile);
+      if (updatedProfile.coffee_stamps === 0 && updatedProfile.free_coffees > previousFreeCoffees) {
+        notifyCoffeeReward(trimmedUserId);
+      }
+    }
+
+    setStampSubmitting(false);
+  }
+
+  async function handleRedeemFreeCoffee() {
+    const trimmedUserId = userId.trim();
+    if (!UUID_RE.test(trimmedUserId)) {
+      setError("Müşteri User ID geçerli bir UUID olmalı.");
+      return;
+    }
+
+    setError(null);
+    setRedeemSubmitting(true);
+
+    const { error: insertError } = await supabase.from("coffee_stamp_transactions").insert({
+      user_id: trimmedUserId,
+      type: "redeem_free_coffee",
+    });
+
+    if (insertError) {
+      // ör. profiles_free_coffees_non_negative CHECK constraint'i (müşterinin
+      // hiç ücretsiz kahve hakkı yokken bu butona basılmış olması — race condition).
+      setError(insertError.message);
+      setRedeemSubmitting(false);
+      return;
+    }
+
+    const updatedProfile = await fetchCoffeeProfile(trimmedUserId);
+    if (updatedProfile) {
+      setCoffeeProfile(updatedProfile);
+    }
+
+    setRedeemSubmitting(false);
+  }
+
   function startScan() {
     setScanError(null);
     setScanSuccessId(null);
     setScanning(true);
+    // Yeni bir tarama, yeni bir müşteri demek — önceki müşterinin kahve
+    // damgası kartını temizle.
+    setCoffeeProfile(null);
   }
 
   function cancelScan() {
@@ -115,6 +259,31 @@ export default function LoyaltyPage() {
     }
 
     setSubmitting(true);
+
+    // Müşterinin güncel profilini önceden okuyoruz: "harca" (redeem) işleminde
+    // bakiyeyi aşan bir tutar girilmişse formu DB'ye gitmeden reddedebiliriz.
+    // Bu sadece bir UX kolaylığı — asıl garanti profiles.loyalty_points üzerindeki
+    // CHECK constraint'ten gelir (bkz. backend/supabase/migrations/0006_loyalty_guard.sql),
+    // bu kontrol atlansa/bug'lı olsa bile veritabanı bakiyeyi negatife düşürmez.
+    const { data: currentProfile, error: currentProfileError } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", trimmedUserId)
+      .single<Profile>();
+
+    if (currentProfileError) {
+      setError(`Müşteri profili okunamadı: ${currentProfileError.message}`);
+      setSubmitting(false);
+      return;
+    }
+
+    if (type === "redeem" && pointsValue > currentProfile.loyalty_points) {
+      setError(
+        `Yetersiz bakiye: müşterinin ${currentProfile.loyalty_points} puanı var, ${pointsValue} puan harcanamaz.`
+      );
+      setSubmitting(false);
+      return;
+    }
 
     const { error: insertError } = await supabase.from("loyalty_transactions").insert({
       user_id: trimmedUserId,
@@ -273,6 +442,57 @@ export default function LoyaltyPage() {
           </p>
         </div>
       )}
+
+      {/* Kahve Damgası — mevcut puan sisteminden tamamen ayrı bir mekanik.
+          Yukarıdaki QR tarayıcı/userId ile ortak çalışır, kendi formu yok. */}
+      <div className="mt-6 rounded-lg border border-neutral-200 bg-white p-4">
+        <h2 className="mb-1 text-sm font-semibold text-neutral-900">☕ Kahve Damgası</h2>
+        <p className="mb-4 text-sm text-neutral-500">
+          Harcanan tutardan bağımsız, ayrı bir sadakat mekaniği: her kahve
+          alımında 1 damga eklenir, 6 damgada sayaç sıfırlanır ve müşteri 1
+          ücretsiz kahve kazanır.
+        </p>
+
+        {coffeeProfile ? (
+          <div className="mb-4 space-y-1">
+            <p className="text-sm text-neutral-700">
+              {coffeeProfile.full_name ?? "Müşteri"}:{" "}
+              <span className="font-semibold">{coffeeProfile.coffee_stamps} / 6</span> damga
+            </p>
+            {coffeeProfile.free_coffees > 0 && (
+              <p className="text-sm text-amber-700">
+                🎁 {coffeeProfile.free_coffees} ücretsiz kahve hakkı var
+              </p>
+            )}
+          </div>
+        ) : (
+          <p className="mb-4 text-sm text-neutral-400">
+            Yukarıdan müşterinin User ID&apos;sini girin ya da QR&apos;ını okutun.
+          </p>
+        )}
+
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={handleAddStamp}
+            disabled={stampSubmitting}
+            className="flex-1 rounded-md bg-brand px-3 py-2 text-sm font-medium text-white hover:bg-brand-hover disabled:opacity-50"
+          >
+            {stampSubmitting ? "Kaydediliyor..." : "☕ Kahve İçti (+1 Damga)"}
+          </button>
+
+          {coffeeProfile && coffeeProfile.free_coffees > 0 && (
+            <button
+              type="button"
+              onClick={handleRedeemFreeCoffee}
+              disabled={redeemSubmitting}
+              className="flex-1 rounded-md border border-neutral-300 px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-100 disabled:opacity-50"
+            >
+              {redeemSubmitting ? "Kaydediliyor..." : "🎁 Ücretsiz Kahveyi Kullan"}
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
