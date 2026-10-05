@@ -65,11 +65,13 @@ backend/
 ## 4. Fazlar
 
 ### Faz 0 — Hazırlık (1 hafta)
-- [ ] scaldcoffee.com üzerinden marka varlıklarını toplama: logo, renk paleti, fontlar, ürün fotoğrafları, şube adres/saatleri, sosyal medya linkleri
-  - *Not:* Bu ortamdan siteye doğrudan erişim şu an ağ politikası tarafından engelli. Ya ortam ayarlarından scaldcoffee.com'u izinli domain listesine ekleyip bana tekrar çektirebilirsiniz, ya da içerikleri/fotoğrafları siz paylaşırsınız.
-- [ ] Expo projesinin iskeletinin kurulması (TypeScript, expo-router, ESLint/Prettier)
-- [ ] Supabase projesinin açılması, `.env` ve bağlantı yapılandırması
-- [ ] Figma veya basit bir tasarım referansı ile marka renkleri/tipografinin belirlenmesi
+- [x] scaldcoffee.com üzerinden marka varlıklarını toplama: logo, renk paleti, fontlar, şube fotoğrafları, şube adres/telefon, sosyal medya linki
+  - Gerçek logo (`mobile/assets/images/brand/scald-logo.png`), marka rengi (`#140A61` lacivert/indigo — logo mürekkep rengi, `theme.ts`'e işlendi), fontlar (Cormorant Garamond başlıklar için, Manrope gövde metni için — **henüz uygulamaya entegre edilmedi, Faz 4'te yapılabilir**), 3 gerçek şube (Akçakoca, Wolf Garden, Kadıköy Yeldeğirmeni — adres/telefon/koordinat/fotoğraf ile, Supabase'de canlı), Instagram (@scald.coffee), e-posta (info@scaldcoffee.com) alındı.
+  - App icon/splash/favicon gerçek logo ile güncellendi. **Not:** Logo bir "wordmark" (yazı tipi logosu), ayrı bir kare ikon/amblem yok — küçük boyutlarda (telefon ana ekranı) okunabilirliği sınırlı olabilir. İsterseniz sadece "C" amblemini kullanan ayrı bir app icon tasarlatabiliriz.
+  - Sitede ürün/menü fiyat listesi bulunmuyor (API'leri boş döndü) — menü içeriği hâlâ placeholder, gerçek menü için ya admin panelden siz girersiniz ya da bana ürün/fiyat listesini iletirsiniz.
+- [x] Expo projesinin iskeletinin kurulması (TypeScript, expo-router, ESLint/Prettier)
+- [x] Supabase projesinin açılması, `.env` ve bağlantı yapılandırması
+- [x] Marka renkleri/tipografinin belirlenmesi (gerçek logo renginden)
 
 ### Faz 1 — MVP: Menü + Şube Bulucu (2-3 hafta)
 - [ ] Supabase şeması: `categories`, `products`, `locations` + seed data

@@ -65,28 +65,49 @@ insert into public.products (id, category_id, name, description, price, image_ur
 on conflict (id) do nothing;
 
 -- ---------------------------------------------------------------------------
--- locations
+-- locations — scaldcoffee.com'dan alınan gerçek şube bilgileri
+-- (fotoğraflar 0004_location_photos.sql'deki "location-photos" bucket'ına
+-- yüklendikten sonra image_url burada o public URL'leri referans alır)
 -- ---------------------------------------------------------------------------
-insert into public.locations (id, name, address, lat, lng, phone, opening_hours) values
+insert into public.locations (id, name, address, lat, lng, phone, opening_hours, image_url) values
   (
-    'b1111111-1111-1111-1111-111111111111',
-    'Scald Kadıköy',
-    'Moda Cd. No:1, Kadıköy / İstanbul',
-    40.9877,
-    29.0271,
-    '+90 216 000 00 00',
-    '{"mon_sun": "08:00-22:00"}'::jsonb
+    'c0000000-0000-0000-0000-000000000001',
+    'Scald Akçakoca',
+    'Osmaniye, Atatürk Cd., 81650 Akçakoca/Düzce',
+    41.0896633,
+    31.1302742,
+    '+90 545 956 31 45',
+    '{"info": "Çalışma saatleri için şubeyi arayınız"}'::jsonb,
+    null
   ),
   (
-    'b2222222-2222-2222-2222-222222222222',
-    'Scald Beşiktaş',
-    'Barbaros Blv. No:1, Beşiktaş / İstanbul',
-    41.0431,
-    29.0073,
-    '+90 212 000 00 00',
-    '{"mon_sun": "08:00-22:00"}'::jsonb
+    'c0000000-0000-0000-0000-000000000002',
+    'Scald Wolf Garden',
+    'Değirmen ağzı mevki, Hacı Yusuflar, Susam Sk. No: 5, 81650 Akçakoca/Düzce',
+    41.0820551,
+    31.1009379,
+    '+90 545 956 31 45',
+    '{"info": "Çalışma saatleri için şubeyi arayınız"}'::jsonb,
+    null
+  ),
+  (
+    'c0000000-0000-0000-0000-000000000003',
+    'Scald Kadıköy Yeldeğirmeni',
+    'Rasimpaşa, Karakolhane Cd. No:30, 34716 Kadıköy/İstanbul',
+    40.9945132,
+    29.0298494,
+    '+90 545 956 31 45',
+    '{"info": "Çalışma saatleri için şubeyi arayınız"}'::jsonb,
+    null
   )
-on conflict (id) do nothing;
+on conflict (id) do update set
+  name = excluded.name, address = excluded.address, lat = excluded.lat, lng = excluded.lng,
+  phone = excluded.phone, opening_hours = excluded.opening_hours;
+
+-- Not: image_url değerleri seed.sql dosyasında null bırakılmıştır çünkü dosya
+-- yolları Storage'a yükleme sırasında projeye özeldir (bkz. backend/supabase/README.md
+-- "Şube fotoğraflarını yükleme" bölümü). Mevcut canlı projede bu alanlar
+-- Management API ile ayrıca güncellenmiştir.
 
 -- ---------------------------------------------------------------------------
 -- promotions (örnek kampanya)

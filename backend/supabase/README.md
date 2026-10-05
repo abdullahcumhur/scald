@@ -14,6 +14,9 @@ backend/supabase/
                       admin yazma politikaları (admin/ panelin kullandığı),
                       loyalty_transactions eklendiğinde profiles.loyalty_points'i
                       otomatik güncelleyen trigger
+    0003_orders.sql   → orders, order_items tabloları ("sırasız teslim al")
+    0004_location_photos.sql → locations.image_url, "location-photos"
+                      Storage bucket'ı (herkese açık okuma, sadece admin yazma)
   seed.sql          → örnek menü/şube/kampanya verisi (mobile/src/data/mock.ts
                       ile tutarlı)
 ```
@@ -113,6 +116,25 @@ psql "<CONNECTION_STRING>" -f seed.sql
 - `seed.sql`, `mobile/src/data/mock.ts` dosyasındaki geçici mock veriyle aynı
   ürün/şube isimlerini kullanır; ileride mobil uygulama mock veri yerine
   gerçek Supabase bağlantısına geçtiğinde veri tutarlılığı sağlanmış olur.
+
+## Şube fotoğraflarını yükleme
+
+Gerçek şube fotoğrafları (scaldcoffee.com'dan alınmıştır) repoda
+`mobile/assets/images/brand/location-*.jpg` altında bulunur. Yeni/sıfırdan
+bir Supabase projesinde bunları `location-photos` bucket'ına yüklemek için
+(0004 migration'ı bucket'ı ve RLS politikalarını zaten kurar):
+
+```bash
+# Supabase Dashboard → Storage → location-photos → Upload file ile elle
+# yükleyebilir, ya da Storage API ile (admin oturum token'ı gerekir):
+curl -X POST "https://<PROJECT_REF>.supabase.co/storage/v1/object/location-photos/location-akcakoca.jpg" \
+  -H "Authorization: Bearer <ADMIN_ACCESS_TOKEN>" \
+  -H "Content-Type: image/jpeg" \
+  --data-binary "@mobile/assets/images/brand/location-akcakoca.jpg"
+```
+
+Yükledikten sonra `locations.image_url` alanını public URL ile güncelleyin:
+`https://<PROJECT_REF>.supabase.co/storage/v1/object/public/location-photos/<dosya-adı>`
 
 ## İlk admin kullanıcısını oluşturma
 
