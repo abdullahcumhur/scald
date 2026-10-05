@@ -97,14 +97,17 @@ admin/
     login/page.tsx            → e-posta + şifre girişi, is_admin kontrolü
     dashboard/
       layout.tsx               → üst menü + client-side oturum/admin koruması
-      page.tsx                 → ana sayfa (5 bölüme giden kartlar)
+      page.tsx                 → ana sayfa (kartlar)
       categories/page.tsx      → kategori CRUD
       products/page.tsx        → ürün CRUD (kategori seçimi dropdown ile)
       locations/page.tsx       → şube CRUD (opening_hours JSON textarea)
-      promotions/page.tsx      → kampanya CRUD (tarih aralığı)
-      loyalty/page.tsx         → kasada puan kazandırma/harcama ekranı
+      promotions/page.tsx      → kampanya CRUD (tarih aralığı) + push bildirimi gönderme
+    api/
+      send-notification/route.ts → kampanyayı tüm kayıtlı mobil kullanıcılara
+                                    Expo push bildirimi olarak gönderen route handler
   lib/
-    supabase.ts                → Supabase client (NEXT_PUBLIC_* env değişkenleri)
+    supabase.ts                → Supabase client (NEXT_PUBLIC_* env değişkenleri, browser)
+    supabase-admin.ts          → Supabase service-role client (SERVER-ONLY, RLS bypass)
     database.types.ts          → tablo tipleri (categories, products, ...)
     useRequireAdmin.ts         → /dashboard/* için client-side oturum/admin hook'u
 ```
@@ -147,10 +150,10 @@ Panel Render'da standart bir Node web servisi olarak çalışır (`npm run build
    → bu GitHub reposunu seçin. Render, `admin/render.yaml`'ı otomatik bulur
    (repo kökünde değil `admin/` altında olduğu için "Root Directory" alanını
    `admin` olarak ayarlamanız gerekebilir — Blueprint sihirbazında sorulur).
-2. Servis oluşturulurken `NEXT_PUBLIC_SUPABASE_URL` ve
-   `NEXT_PUBLIC_SUPABASE_ANON_KEY` ortam değişkenlerini girin (Supabase
-   Dashboard → Project Settings → API'den alınır, bkz. yukarıdaki "Ortam
-   değişkenleri" bölümü).
+2. Servis oluşturulurken `NEXT_PUBLIC_SUPABASE_URL`,
+   `NEXT_PUBLIC_SUPABASE_ANON_KEY` ve `SUPABASE_SERVICE_ROLE_KEY` ortam
+   değişkenlerini girin (Supabase Dashboard → Project Settings → API'den
+   alınır, bkz. yukarıdaki "Ortam değişkenleri" bölümü).
 3. İlk deploy birkaç dakika sürer; bittiğinde `https://scald-admin.onrender.com`
    gibi bir URL verir.
 
