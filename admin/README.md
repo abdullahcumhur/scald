@@ -121,3 +121,43 @@ tablosunu tekrar sorgular.
 Müşteri User ID'si şimdilik elle (UUID olarak) girilir; ileride mobil
 uygulamada bu bir QR kod olarak gösterilecek ve panel QR okutarak dolduracak
 şekilde genişletilebilir.
+
+## Yayına alma (Render)
+
+Panel Render'da standart bir Node web servisi olarak çalışır (`npm run build`
+→ `npm run start`). Repoda bir `render.yaml` (Blueprint) hazır:
+
+1. [Render Dashboard](https://dashboard.render.com) → **New** → **Blueprint**
+   → bu GitHub reposunu seçin. Render, `admin/render.yaml`'ı otomatik bulur
+   (repo kökünde değil `admin/` altında olduğu için "Root Directory" alanını
+   `admin` olarak ayarlamanız gerekebilir — Blueprint sihirbazında sorulur).
+2. Servis oluşturulurken `NEXT_PUBLIC_SUPABASE_URL` ve
+   `NEXT_PUBLIC_SUPABASE_ANON_KEY` ortam değişkenlerini girin (Supabase
+   Dashboard → Project Settings → API'den alınır, bkz. yukarıdaki "Ortam
+   değişkenleri" bölümü).
+3. İlk deploy birkaç dakika sürer; bittiğinde `https://scald-admin.onrender.com`
+   gibi bir URL verir.
+
+### Kendi domaininize bağlama
+
+Bir domaininiz varsa (ör. `scaldcoffee.com`), admin paneli için bir alt alan
+adı kullanmanızı öneririz (ör. `admin.scaldcoffee.com`) — ana siteyle
+karışmaz ve ayrı bir DNS kaydıyla yönetilir:
+
+1. Render'da servise gidin → **Settings** → **Custom Domains** → **Add
+   Custom Domain** → `admin.scaldcoffee.com` girin.
+2. Render size bir CNAME hedefi verir (ör. `scald-admin.onrender.com`).
+3. Domaininizi yönettiğiniz DNS sağlayıcısında (ör. Namecheap, GoDaddy,
+   Cloudflare) şu kaydı ekleyin:
+   ```
+   Tip: CNAME
+   Ad/Host: admin
+   Değer: scald-admin.onrender.com
+   ```
+4. DNS yayılması genelde birkaç dakika–birkaç saat sürer. Render SSL
+   sertifikasını otomatik sağlar.
+
+Render ücretsiz katmanında servis 15 dakika kullanılmayınca uyur, sıradaki
+istek ~30-60 saniye gecikmeli açılır. Günlük kullanılan bir iç araç için
+bu rahatsız ediciyse ücretli (Starter) plana geçmek bu gecikmeyi ortadan
+kaldırır.
