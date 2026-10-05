@@ -6,6 +6,7 @@ import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { AuthScreen } from '@/components/auth-screen';
 import { ThemedView } from '@/components/themed-view';
 import { useAppFonts } from '@/hooks/use-app-fonts';
+import { useNotificationHistoryListener } from '@/hooks/use-notification-history';
 import { AuthProvider, useAuth } from '@/lib/auth-context';
 import { CartProvider } from '@/lib/cart-context';
 
@@ -13,6 +14,11 @@ SplashScreen.preventAutoHideAsync();
 
 function RootNavigator() {
   const { isConfigured, loading, session } = useAuth();
+
+  // Gelen bildirimleri cihazdaki bildirim geçmişi listesine eklemek için
+  // uygulama genelinde tek bir dinleyici — bildirim ayarları ekranı açık
+  // olmasa da çalışmalı.
+  useNotificationHistoryListener();
 
   // Supabase henüz yapılandırılmadıysa (EXPO_PUBLIC_SUPABASE_URL yok) auth
   // akışını atlayıp doğrudan misafir/demo modunda sekmeleri göster.
@@ -32,6 +38,7 @@ function RootNavigator() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="order-history" options={{ presentation: 'card' }} />
+      <Stack.Screen name="notification-settings" options={{ presentation: 'card' }} />
     </Stack>
   );
 }

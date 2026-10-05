@@ -29,6 +29,10 @@ export default function ProfileScreen() {
       router.push('/order-history');
       return;
     }
+    if (id === 'notification-settings') {
+      router.push('/notification-settings');
+      return;
+    }
     // Henüz işlevsiz — ileride ilgili ekrana yönlendirme / aksiyon eklenecek.
     console.log(`Profile menu item pressed: ${id}`);
   }
