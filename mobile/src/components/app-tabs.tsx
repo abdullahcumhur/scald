@@ -27,6 +27,11 @@ export default function AppTabs() {
         <NativeTabs.Trigger.Icon sf="mappin.and.ellipse" md="place" />
       </NativeTabs.Trigger>
 
+      <NativeTabs.Trigger name="cart">
+        <NativeTabs.Trigger.Label>Sepet</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="cart.fill" md="shopping_cart" />
+      </NativeTabs.Trigger>
+
       <NativeTabs.Trigger name="profile">
         <NativeTabs.Trigger.Label>Profil</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf="person.fill" md="person" />

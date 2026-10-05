@@ -28,6 +28,9 @@ export default function AppTabs() {
           <TabTrigger name="locations" href="/locations" asChild>
             <TabButton>Şubeler</TabButton>
           </TabTrigger>
+          <TabTrigger name="cart" href="/cart" asChild>
+            <TabButton>Sepet</TabButton>
+          </TabTrigger>
           <TabTrigger name="profile" href="/profile" asChild>
             <TabButton>Profil</TabButton>
           </TabTrigger>

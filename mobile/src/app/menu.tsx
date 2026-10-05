@@ -6,11 +6,15 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, Spacing } from '@/constants/theme';
 import { useCategories, useProducts } from '@/hooks/use-supabase-data';
+import { useTheme } from '@/hooks/use-theme';
+import { useCart } from '@/lib/cart-context';
 
 export default function MenuScreen() {
   const { data: categories, loading: categoriesLoading } = useCategories();
   const { data: products, loading: productsLoading } = useProducts();
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | undefined>(undefined);
+  const { items: cartItems, addItem } = useCart();
+  const theme = useTheme();
 
   // Supabase'den veri geldikten sonra kategori listesi değişebileceği için
   // (mock -> gerçek veri), seçim yoksa ilk kategoriyi türetilmiş state olarak kullan.
@@ -58,17 +62,38 @@ export default function MenuScreen() {
 
             <ScrollView
               contentContainerStyle={[styles.productList, { paddingBottom: BottomTabInset }]}>
-              {visibleProducts.map((product) => (
-                <ThemedView key={product.id} type="backgroundElement" style={styles.productCard}>
-                  <ThemedView style={styles.productInfo}>
-                    <ThemedText type="default">{product.name}</ThemedText>
-                    <ThemedText type="small" themeColor="textSecondary">
-                      {product.description}
-                    </ThemedText>
+              {visibleProducts.map((product) => {
+                const cartQuantity =
+                  cartItems.find((item) => item.product.id === product.id)?.quantity ?? 0;
+                return (
+                  <ThemedView key={product.id} type="backgroundElement" style={styles.productCard}>
+                    <ThemedView style={styles.productInfo}>
+                      <ThemedText type="default">{product.name}</ThemedText>
+                      <ThemedText type="small" themeColor="textSecondary">
+                        {product.description}
+                      </ThemedText>
+                      {cartQuantity > 0 && (
+                        <ThemedText type="small" themeColor="primary">
+                          Sepette: {cartQuantity}
+                        </ThemedText>
+                      )}
+                    </ThemedView>
+                    <ThemedView style={styles.productActions}>
+                      <ThemedText type="smallBold">{product.price}₺</ThemedText>
+                      <Pressable
+                        onPress={() => addItem(product)}
+                        style={({ pressed }) => [
+                          styles.addButton,
+                          { backgroundColor: theme.primary, opacity: pressed ? 0.7 : 1 },
+                        ]}>
+                        <ThemedText type="smallBold" style={styles.addButtonText}>
+                          Ekle
+                        </ThemedText>
+                      </Pressable>
+                    </ThemedView>
                   </ThemedView>
-                  <ThemedText type="smallBold">{product.price}₺</ThemedText>
-                </ThemedView>
-              ))}
+                );
+              })}
               {visibleProducts.length === 0 && (
                 <ThemedText type="small" themeColor="textSecondary">
                   Bu kategoride henüz ürün yok.
@@ -120,5 +145,18 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: Spacing.half,
     backgroundColor: 'transparent',
+  },
+  productActions: {
+    alignItems: 'flex-end',
+    gap: Spacing.one,
+    backgroundColor: 'transparent',
+  },
+  addButton: {
+    borderRadius: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.one,
+  },
+  addButtonText: {
+    color: '#ffffff',
   },
 });

@@ -7,6 +7,7 @@ import AppTabs from '@/components/app-tabs';
 import { AuthScreen } from '@/components/auth-screen';
 import { ThemedView } from '@/components/themed-view';
 import { AuthProvider, useAuth } from '@/lib/auth-context';
+import { CartProvider } from '@/lib/cart-context';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -31,8 +32,10 @@ export default function TabLayout() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <AuthProvider>
-        <AnimatedSplashOverlay />
-        <RootNavigator />
+        <CartProvider>
+          <AnimatedSplashOverlay />
+          <RootNavigator />
+        </CartProvider>
       </AuthProvider>
     </ThemeProvider>
   );
