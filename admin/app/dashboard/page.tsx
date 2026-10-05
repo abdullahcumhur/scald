@@ -26,6 +26,11 @@ const SECTIONS = [
     title: "Sadakat Puanı",
     description: "Kasada müşteri hesabına puan kazandır veya harca.",
   },
+  {
+    href: "/dashboard/orders",
+    title: "Siparişler",
+    description: "Sırasız teslim al siparişlerini hazırla ve teslim et.",
+  },
 ];
 
 export default function DashboardHome() {

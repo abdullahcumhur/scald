@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { href: "/dashboard/locations", label: "Şubeler" },
   { href: "/dashboard/promotions", label: "Kampanyalar" },
   { href: "/dashboard/loyalty", label: "Sadakat Puanı" },
+  { href: "/dashboard/orders", label: "Siparişler" },
 ];
 
 export default function DashboardLayout({

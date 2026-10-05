@@ -64,3 +64,29 @@ export type LoyaltyTransaction = {
   note: string | null;
   created_at: string;
 };
+
+// Şema: backend/supabase/migrations/0003_orders.sql ("Sırasız Teslim Al")
+export type OrderStatus = "pending" | "preparing" | "ready" | "completed" | "cancelled";
+
+export type Order = {
+  id: string;
+  user_id: string;
+  location_id: string;
+  status: OrderStatus;
+  pickup_code: string;
+  requested_minutes: number;
+  total_amount: number;
+  note: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type OrderItem = {
+  id: string;
+  order_id: string;
+  product_id: string | null;
+  product_name: string;
+  unit_price: number;
+  quantity: number;
+  created_at: string;
+};
