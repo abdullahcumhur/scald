@@ -1,56 +1,91 @@
-# Welcome to your Expo app 👋
+# Scald Coffee — Mobil Uygulama
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Scald Coffee müşterileri için Expo (React Native + TypeScript, expo-router)
+ile yazılmış mobil uygulama. Genel proje bağlamı için bkz.
+[`../ROADMAP.md`](../ROADMAP.md); backend şeması için
+[`../backend/supabase/`](../backend/supabase/).
 
-## Get started
-
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Kurulum
 
 ```bash
-npm run reset-project
+cd mobile
+npm install
+cp .env.example .env   # ve kendi Supabase bilgilerinizi girin
+npx expo start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Çıktıda çıkan QR kodu telefonunuzda **Expo Go** uygulamasıyla okutarak
+uygulamayı gerçek cihazınızda anında test edebilirsiniz (mağazaya yüklemeye
+gerek yok). `w` tuşuna basarak tarayıcıda da açabilirsiniz.
 
-### Other setup steps
+### Ortam değişkenleri
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+`.env.example` dosyasını referans alın; `EXPO_PUBLIC_SUPABASE_URL` ve
+`EXPO_PUBLIC_SUPABASE_ANON_KEY` değerleri Supabase Dashboard → Project
+Settings → API'den alınır. `.env` dosyası `.gitignore`'dadır, commit
+edilmez.
 
-## Learn more
+### Typecheck ve lint
 
-To learn more about developing your project with Expo, look at the following resources:
+```bash
+npx tsc --noEmit
+npx eslint .
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Web önizleme (Render)
 
-## Join the community
+Uygulamanın web çıktısı (`app.json`'da `web.output: "static"`) tamamen
+statik dosyalar ürettiği için bir **Static Site** olarak deploy edilebilir —
+tarayıcıdan açılabilen bir link verir, ekranları gezip test edebilirsiniz.
 
-Join our community of developers creating universal apps.
+> **Önemli:** Bu sadece bir **önizleme**dir, gerçek yayın kanalı değildir.
+> Harita (react-native-maps native-only, web'de placeholder gösterir) ve
+> push bildirimleri (web'de token alınamaz) gibi native-only özellikler
+> web'de çalışmaz/sınırlıdır. Tam deneyim için Expo Go veya gerçek bir
+> build (EAS) gerekir.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+1. [Render Dashboard](https://dashboard.render.com) → **New** → **Static
+   Site** → bu GitHub reposunu seçin.
+2. **Root Directory**: `mobile`
+3. **Build Command**: `npm install && npx expo export --platform web`
+4. **Publish Directory**: `dist`
+5. Environment Variables:
+   - `EXPO_PUBLIC_SUPABASE_URL` = `https://zhotyrulimzkyoceaawi.supabase.co`
+   - `EXPO_PUBLIC_SUPABASE_ANON_KEY` = `sb_publishable_CqU2NYvIOPMDGmbwtoMo1w_jD0cl9R0`
+6. **Deploy** — birkaç dakika içinde bir URL verir (ör.
+   `https://scald-mobile-preview.onrender.com`).
+
+Repoda bir `render.yaml` (Blueprint) de hazır — **New → Blueprint** ile bu
+adımları otomatik kurar, ayrıca alt sayfalara (`/menu`, `/profil` vb.)
+doğrudan/yenileme ile gidildiğinde çalışması için gerekli rewrite
+kurallarını da içerir (Expo'nun statik export'u her route için ayrı bir
+`.html` dosyası üretir, ör. `/menu.html`).
+
+## Yapı
+
+```
+mobile/
+  src/
+    app/
+      _layout.tsx        → Stack (auth gate) + (tabs) grubu + order-history
+      (tabs)/             → NativeTabs ile gösterilen 5 sekme
+        index.tsx          → Ana Sayfa (öne çıkanlar, kampanyalar, puan)
+        menu.tsx            → Menü (kategori/ürün, sepete ekleme)
+        locations.tsx        → Şubeler (harita + liste + fotoğraf)
+        cart.tsx              → Sepet / aktif sipariş takibi
+        profile.tsx            → Profil (puan QR'ı, sipariş geçmişi, çıkış)
+      order-history.tsx   → Geçmiş siparişler (tab değil, push edilen ekran)
+    components/           → Paylaşılan UI bileşenleri (ThemedText/View, auth ekranı, harita)
+    lib/                  → Supabase client, auth/cart context'leri
+    hooks/                → Supabase veri çekme hook'ları, push token kaydı
+    data/mock.ts           → Supabase yapılandırılmadığında kullanılan demo veri
+    constants/theme.ts      → Marka renkleri (scaldcoffee.com'dan), spacing, fontlar
+```
+
+## Marka varlıkları
+
+Gerçek logo ve şube fotoğrafları `assets/images/brand/` altındadır
+(scaldcoffee.com'dan alınmıştır). App icon/splash/favicon bu logodan
+üretilmiştir — logo bir "wordmark" olduğundan küçük ikon boyutlarında
+okunabilirliği sınırlıdır; ayrı bir kare amblem tasarlanırsa
+`assets/images/icon.png` ve ilgili Android/splash dosyaları güncellenebilir.

@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: scald-mobile-preview
+    runtime: static
+    buildCommand: npm install && npx expo export --platform web
+    staticPublishPath: ./dist
+    envVars:
+      - key: EXPO_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: EXPO_PUBLIC_SUPABASE_ANON_KEY
+        sync: false
+      - key: NODE_VERSION
+        value: 20.18.0
+    routes:
+      - type: rewrite
+        source: /menu
+        destination: /menu.html
+      - type: rewrite
+        source: /locations
+        destination: /locations.html
+      - type: rewrite
+        source: /cart
+        destination: /cart.html
+      - type: rewrite
+        source: /profile
+        destination: /profile.html
+      - type: rewrite
+        source: /order-history
+        destination: /order-history.html
