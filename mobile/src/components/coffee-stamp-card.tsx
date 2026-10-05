@@ -56,9 +56,7 @@ export function CoffeeStampCard() {
             strokeLinecap="round"
             strokeDasharray={`${RING_CIRCUMFERENCE} ${RING_CIRCUMFERENCE}`}
             strokeDashoffset={strokeDashoffset}
-            rotation={-90}
-            originX={RING_SIZE / 2}
-            originY={RING_SIZE / 2}
+            transform={`rotate(-90 ${RING_SIZE / 2} ${RING_SIZE / 2})`}
           />
         </Svg>
         <View style={styles.ringCenter} pointerEvents="none">
@@ -76,8 +74,8 @@ export function CoffeeStampCard() {
         </ThemedText>
 
         {freeCoffees > 0 && (
-          <View style={[styles.freeBanner, { backgroundColor: theme.accent }]}>
-            <ThemedText type="small" style={styles.freeBannerText} numberOfLines={1}>
+          <View style={[styles.freeBanner, { backgroundColor: theme.backgroundSelected }]}>
+            <ThemedText type="small" themeColor="primary" numberOfLines={1}>
               🎁 {freeCoffees} ücretsiz kahve hakkın var!
             </ThemedText>
           </View>

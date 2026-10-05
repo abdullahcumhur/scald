@@ -61,16 +61,18 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: BottomTabInset + Spacing.five }}>
         <ThemedView type="primary" style={styles.header}>
-          <Image
-            source={require('@/assets/images/brand/ambiance/interior-reading-nook.jpg')}
-            style={StyleSheet.absoluteFill}
-            contentFit="cover"
-            contentPosition="top"
-          />
-          <View style={[StyleSheet.absoluteFill, styles.headerScrim]} />
+          <View style={styles.headerLogoBgWrap} pointerEvents="none">
+            <Image
+              source={require('@/assets/images/brand/scald-logo-trimmed.png')}
+              style={styles.headerLogoBg}
+              contentFit="contain"
+              tintColor="rgba(255,255,255,0.14)"
+            />
+          </View>
+
           <SafeAreaView edges={['top']}>
-            <ThemedView type="primary" style={styles.headerRow}>
-              <ThemedView type="primary" style={styles.headerTextGroup}>
+            <ThemedView lightColor="transparent" darkColor="transparent" style={styles.headerRow}>
+              <ThemedView lightColor="transparent" darkColor="transparent" style={styles.headerTextGroup}>
                 <ThemedText type="small" style={styles.headerGreeting}>
                   Hoş geldin,
                 </ThemedText>
@@ -88,7 +90,7 @@ export default function HomeScreen() {
             </ThemedView>
 
             <Pressable onPress={() => router.push('/profile')} style={styles.loyaltyPill}>
-              <Ionicons name="star" size={14} color={theme.accent} />
+              <Ionicons name="star" size={14} color="#ffffff" />
               <ThemedText type="small" style={styles.loyaltyPillText}>
                 {loyaltyPoints} puan · {mockLoyaltySummary.tier}
               </ThemedText>
@@ -101,17 +103,21 @@ export default function HomeScreen() {
 
           <ThemedView style={styles.ctaRow}>
             <Pressable
-              style={[styles.ctaCard, { backgroundColor: theme.accent }]}
+              style={[
+                styles.ctaCard,
+                styles.ctaCardOutline,
+                { backgroundColor: theme.backgroundElement, borderColor: theme.backgroundSelected },
+              ]}
               onPress={() => router.push('/cart')}>
-              <Ionicons name="cafe" size={26} color="#1A1206" />
-              <ThemedText type="subtitle" style={styles.ctaTitleDark}>
+              <Ionicons name="cafe" size={26} color={theme.primary} />
+              <ThemedText type="subtitle" style={[styles.ctaTitleDark, { color: theme.text }]}>
                 Hazır Al
               </ThemedText>
               <ThemedView style={styles.ctaFooterRow} lightColor="transparent" darkColor="transparent">
-                <ThemedText type="smallBold" style={styles.ctaActionDark}>
+                <ThemedText type="smallBold" themeColor="primary">
                   Sipariş Ver
                 </ThemedText>
-                <Ionicons name="chevron-forward" size={16} color="#1A1206" />
+                <Ionicons name="chevron-forward" size={16} color={theme.primary} />
               </ThemedView>
             </Pressable>
 
@@ -252,9 +258,6 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.four,
     overflow: 'hidden',
   },
-  headerScrim: {
-    backgroundColor: 'rgba(20,10,10,0.55)',
-  },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -297,6 +300,19 @@ const styles = StyleSheet.create({
   loyaltyPillText: {
     color: '#ffffff',
   },
+  headerLogoBgWrap: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerLogoBg: {
+    width: 140,
+    height: 42,
+  },
   body: {
     paddingHorizontal: Spacing.four,
     paddingTop: Spacing.four,
@@ -313,6 +329,9 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
     minHeight: 120,
     justifyContent: 'space-between',
+  },
+  ctaCardOutline: {
+    borderWidth: 1,
   },
   ctaTitleDark: {
     color: '#1A1206',

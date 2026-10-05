@@ -67,16 +67,12 @@ export function AuthScreen() {
             showsVerticalScrollIndicator={false}>
             <ThemedView type="primary" style={styles.hero}>
               <SafeAreaView edges={['top']}>
-                <View style={styles.logoWrapper}>
-                  <Image
-                    source={require('@/assets/images/brand/scald-logo.png')}
-                    style={styles.logo}
-                    contentFit="contain"
-                  />
-                </View>
-                <ThemedText type="subtitle" style={styles.heroTitle}>
-                  Scald&apos;e Hoş Geldin
-                </ThemedText>
+                <Image
+                  source={require('@/assets/images/brand/scald-logo-trimmed.png')}
+                  style={styles.logo}
+                  contentFit="contain"
+                  tintColor="#ffffff"
+                />
                 <ThemedText type="small" style={styles.heroSubtitle}>
                   {mode === 'login' ? 'Hesabınla giriş yap' : 'Yeni bir hesap oluştur'}
                 </ThemedText>
@@ -227,17 +223,10 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: Spacing.five,
     borderBottomRightRadius: Spacing.five,
   },
-  logoWrapper: {
-    alignSelf: 'center',
-    backgroundColor: '#ffffff',
-    borderRadius: Spacing.three,
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.four,
-    marginBottom: Spacing.two,
-  },
   logo: {
-    width: 180,
-    height: 54,
+    width: 220,
+    height: 66,
+    marginBottom: Spacing.two,
   },
   heroTitle: {
     color: '#ffffff',
