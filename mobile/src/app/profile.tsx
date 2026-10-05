@@ -1,6 +1,7 @@
 import QRCode from 'react-native-qrcode-svg';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -19,13 +20,18 @@ const profileMenuItems: ProfileMenuItem[] = [
   { id: 'notification-settings', label: 'Bildirim Ayarları' },
 ];
 
-function handleMenuItemPress(id: string) {
-  // Henüz işlevsiz — ileride ilgili ekrana yönlendirme / aksiyon eklenecek.
-  console.log(`Profile menu item pressed: ${id}`);
-}
-
 export default function ProfileScreen() {
+  const router = useRouter();
   const { isConfigured, user, profile, signOut } = useAuth();
+
+  function handleMenuItemPress(id: string) {
+    if (id === 'order-history') {
+      router.push('/order-history');
+      return;
+    }
+    // Henüz işlevsiz — ileride ilgili ekrana yönlendirme / aksiyon eklenecek.
+    console.log(`Profile menu item pressed: ${id}`);
+  }
 
   // Supabase henüz yapılandırılmadıysa (misafir/demo modu) sabit mock veriyle göster.
   const displayName = isConfigured ? (profile?.fullName ?? 'Scald Üyesi') : 'Misafir Kullanıcı';
