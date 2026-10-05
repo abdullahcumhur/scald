@@ -5,15 +5,23 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, Spacing } from '@/constants/theme';
-import { mockCategories, mockProducts } from '@/data/mock';
+import { useCategories, useProducts } from '@/hooks/use-supabase-data';
 
 export default function MenuScreen() {
-  const [activeCategoryId, setActiveCategoryId] = useState(mockCategories[0]?.id);
+  const { data: categories, loading: categoriesLoading } = useCategories();
+  const { data: products, loading: productsLoading } = useProducts();
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | undefined>(undefined);
+
+  // Supabase'den veri geldikten sonra kategori listesi değişebileceği için
+  // (mock -> gerçek veri), seçim yoksa ilk kategoriyi türetilmiş state olarak kullan.
+  const activeCategoryId = selectedCategoryId ?? categories[0]?.id;
 
   const visibleProducts = useMemo(
-    () => mockProducts.filter((product) => product.categoryId === activeCategoryId),
-    [activeCategoryId]
+    () => products.filter((product) => product.categoryId === activeCategoryId),
+    [products, activeCategoryId]
   );
+
+  const isLoading = categoriesLoading || productsLoading;
 
   return (
     <ThemedView style={styles.container}>
@@ -22,45 +30,53 @@ export default function MenuScreen() {
           Menü
         </ThemedText>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoryRow}>
-          {mockCategories.map((category) => {
-            const isActive = category.id === activeCategoryId;
-            return (
-              <Pressable key={category.id} onPress={() => setActiveCategoryId(category.id)}>
-                <ThemedView
-                  type={isActive ? 'backgroundSelected' : 'backgroundElement'}
-                  style={styles.categoryChip}>
-                  <ThemedText type="smallBold" themeColor={isActive ? 'text' : 'textSecondary'}>
-                    {category.name}
-                  </ThemedText>
-                </ThemedView>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
+        {isLoading ? (
+          <ThemedText type="small" themeColor="textSecondary">
+            Yükleniyor...
+          </ThemedText>
+        ) : (
+          <>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.categoryRow}>
+              {categories.map((category) => {
+                const isActive = category.id === activeCategoryId;
+                return (
+                  <Pressable key={category.id} onPress={() => setSelectedCategoryId(category.id)}>
+                    <ThemedView
+                      type={isActive ? 'backgroundSelected' : 'backgroundElement'}
+                      style={styles.categoryChip}>
+                      <ThemedText type="smallBold" themeColor={isActive ? 'text' : 'textSecondary'}>
+                        {category.name}
+                      </ThemedText>
+                    </ThemedView>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
 
-        <ScrollView
-          contentContainerStyle={[styles.productList, { paddingBottom: BottomTabInset }]}>
-          {visibleProducts.map((product) => (
-            <ThemedView key={product.id} type="backgroundElement" style={styles.productCard}>
-              <ThemedView style={styles.productInfo}>
-                <ThemedText type="default">{product.name}</ThemedText>
+            <ScrollView
+              contentContainerStyle={[styles.productList, { paddingBottom: BottomTabInset }]}>
+              {visibleProducts.map((product) => (
+                <ThemedView key={product.id} type="backgroundElement" style={styles.productCard}>
+                  <ThemedView style={styles.productInfo}>
+                    <ThemedText type="default">{product.name}</ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      {product.description}
+                    </ThemedText>
+                  </ThemedView>
+                  <ThemedText type="smallBold">{product.price}₺</ThemedText>
+                </ThemedView>
+              ))}
+              {visibleProducts.length === 0 && (
                 <ThemedText type="small" themeColor="textSecondary">
-                  {product.description}
+                  Bu kategoride henüz ürün yok.
                 </ThemedText>
-              </ThemedView>
-              <ThemedText type="smallBold">{product.price}₺</ThemedText>
-            </ThemedView>
-          ))}
-          {visibleProducts.length === 0 && (
-            <ThemedText type="small" themeColor="textSecondary">
-              Bu kategoride henüz ürün yok.
-            </ThemedText>
-          )}
-        </ScrollView>
+              )}
+            </ScrollView>
+          </>
+        )}
       </SafeAreaView>
     </ThemedView>
   );
