@@ -10,6 +10,10 @@ backend/supabase/
                       loyalty_transactions, promotions, push_tokens
                       tabloları + index'ler + RLS politikaları +
                       auth.users -> profiles trigger'ı
+    0002_admin_and_loyalty.sql → profiles.is_admin, is_admin() helper,
+                      admin yazma politikaları (admin/ panelin kullandığı),
+                      loyalty_transactions eklendiğinde profiles.loyalty_points'i
+                      otomatik güncelleyen trigger
   seed.sql          → örnek menü/şube/kampanya verisi (mobile/src/data/mock.ts
                       ile tutarlı)
 ```
@@ -109,3 +113,23 @@ psql "<CONNECTION_STRING>" -f seed.sql
 - `seed.sql`, `mobile/src/data/mock.ts` dosyasındaki geçici mock veriyle aynı
   ürün/şube isimlerini kullanır; ileride mobil uygulama mock veri yerine
   gerçek Supabase bağlantısına geçtiğinde veri tutarlılığı sağlanmış olur.
+
+## İlk admin kullanıcısını oluşturma
+
+`profiles.is_admin` varsayılan olarak `false`'tur ve kendini admin yapma yolu
+(bilinçli olarak) yoktur — bootstrap için ilk admin'i SQL Editor'dan elle
+işaretlemeniz gerekir:
+
+1. Önce admin panelden veya mobil uygulamadan normal şekilde e-posta/şifre ile
+   kayıt olun (bu otomatik olarak bir `profiles` satırı oluşturur).
+2. Supabase Dashboard → SQL Editor'da şunu çalıştırın:
+
+   ```sql
+   update public.profiles set is_admin = true where id =
+     (select id from auth.users where email = 'admin@scaldcoffee.com');
+   ```
+
+   (e-postayı kendi admin hesabınızla değiştirin.)
+
+Bundan sonra bu kullanıcı admin panelde giriş yapabilir ve menü/şube/kampanya
+içeriğini düzenleyebilir, kasada müşteri QR'ını okutup puan girebilir.

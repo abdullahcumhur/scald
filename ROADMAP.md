@@ -1,17 +1,20 @@
 # Scald Coffee — Mobil Uygulama Yol Haritası
 
 > Kaynak: https://scaldcoffee.com/ (marka, fotoğraf ve içerik referansı)
-> Durum: Proje henüz başlamadı — bu doküman kapsam ve fazları tanımlar.
+> Durum: Faz 0 tamamlandı (Expo iskeleti + Supabase şeması). Faz 1 ve Faz 2 üzerinde çalışılıyor.
 
 ## 1. Kapsam (bu aşamada karar verilen)
 
 - **Platform / Stack:** React Native (Expo) + TypeScript — tek kod tabanından iOS ve Android.
 - **Backend:** Sıfırdan, Supabase (Postgres + Auth + Storage + Realtime) üzerine kurulacak.
+- **Giriş yöntemi:** E-posta + şifre (Supabase Auth).
+- **İçerik yönetimi:** Basit bir admin panel (`admin/`) — çalışanlar menü/şube/kampanya içeriğini ve sadakat puanlarını buradan yönetecek. Yetkilendirme `profiles.is_admin` alanı ile RLS üzerinden sağlanıyor (bkz. `backend/supabase/migrations/0002_admin_and_loyalty.sql`).
 - **Kapsam dışı (şimdilik):** Uygulama içi online sipariş ve ödeme. İleride ayrı bir faz olarak eklenebilir.
 - **Kapsam içi özellikler:**
   1. Fotoğraflı menü (kategoriler, ürünler, fiyatlar)
-  2. Sadakat programı / puan sistemi
+  2. Sadakat programı / puan sistemi (kasada QR okutma)
   3. Şube bulucu + harita + push bildirimler (kampanya/duyuru)
+  4. Basit admin paneli (menü/şube/kampanya CRUD + puan girişi)
 
 ## 2. Rakip Uygulama Analizi (Starbucks, Kahve Dünyası, Coffy)
 
@@ -112,11 +115,16 @@ backend/
 - Çoklu dil desteği (TR/EN)
 
 ## 6. Açık sorular
-1. Sadakat puanları nasıl kazanılacak? (Kasiyer QR okutması / fiş numarası girme / NFC vb.)
-2. Kullanıcı girişi için telefon numarası mı, e-posta mı tercih edilsin?
-3. Kampanya/menü içeriğini kim güncelleyecek — basit bir admin panel gerekiyor mu, yoksa Supabase Studio yeterli mi?
-4. App Store / Play Store hesapları mevcut mu, yoksa yeni mi açılacak?
+
+**Karara bağlananlar:**
+1. ~~Sadakat puanları nasıl kazanılacak?~~ → Kasada admin panel üzerinden müşterinin QR'ı (user id) okutularak/girilerek `loyalty_transactions` tablosuna kayıt düşülür, `profiles.loyalty_points` otomatik güncellenir (bkz. `0002_admin_and_loyalty.sql`).
+2. ~~Kullanıcı girişi için telefon mu e-posta mı?~~ → E-posta + şifre.
+3. ~~İçerik yönetimi?~~ → Basit admin panel (`admin/`).
+
+**Hâlâ açık:**
+4. App Store / Play Store hesapları mevcut mu, yoksa yeni mi açılacak? (Faz 4'e kadar netleşmesi yeterli.)
 5. "Sırasız teslim al" (Faz 2.5) için: mağaza ödeme noktasıyla nasıl entegre olacağız — sadece sepet bilgisini kasada göstermek mi, yoksa kasa/POS ile bir API entegrasyonu mu gerekecek?
+6. Admin panel için ayrı bir "personel" hesabı modeli mi (tüm admin'ler her şeyi yapabilir), yoksa roller mi olsun (ör. sadece puan girebilen kasiyer vs. menü düzenleyebilen yönetici)? Şimdilik tek `is_admin` bayrağıyla basit tutuldu, ileride gerekirse rollere bölünebilir.
 
 ## 7. Tahmini toplam süre
 Faz 0–4 (+ Faz 2.5) toplamda yaklaşık **9-12 hafta** (tek geliştirici, yarı zamanlı ilerlemeye göre değişebilir).
