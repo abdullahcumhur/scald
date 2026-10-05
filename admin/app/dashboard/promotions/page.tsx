@@ -45,6 +45,8 @@ export default function PromotionsPage() {
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [sendingId, setSendingId] = useState<string | null>(null);
+  const [notifyMessage, setNotifyMessage] = useState<string | null>(null);
 
   async function fetchPromotions() {
     setLoading(true);
@@ -115,6 +117,43 @@ export default function PromotionsPage() {
     await fetchPromotions();
   }
 
+  async function handleSendNotification(promotion: Promotion) {
+    setNotifyMessage(null);
+    setSendingId(promotion.id);
+
+    try {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+
+      if (sessionError || !accessToken) {
+        setNotifyMessage("Oturum bulunamadı, lütfen tekrar giriş yapın.");
+        return;
+      }
+
+      const response = await fetch("/api/send-notification", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ title: promotion.title, body: promotion.body ?? "" }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setNotifyMessage(result?.error ?? "Bildirim gönderilirken bir hata oluştu.");
+        return;
+      }
+
+      setNotifyMessage(`${result.sent ?? 0} kullanıcıya gönderildi${result.failed ? `, ${result.failed} başarısız` : ""}.`);
+    } catch {
+      setNotifyMessage("Bildirim gönderilirken bir hata oluştu.");
+    } finally {
+      setSendingId(null);
+    }
+  }
+
   async function handleDelete(id: string) {
     if (!confirm("Bu kampanyayı silmek istediğinize emin misiniz?")) return;
     const { error: deleteError } = await supabase.from("promotions").delete().eq("id", id);
@@ -139,6 +178,12 @@ export default function PromotionsPage() {
 
       {error && (
         <p className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
+      )}
+
+      {notifyMessage && (
+        <p className="mb-4 rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-700">
+          {notifyMessage}
+        </p>
       )}
 
       {showForm && (
@@ -245,6 +290,13 @@ export default function PromotionsPage() {
                       : "—"}
                   </td>
                   <td className="px-4 py-2 text-right">
+                    <button
+                      onClick={() => handleSendNotification(promotion)}
+                      disabled={sendingId === promotion.id}
+                      className="mr-3 text-emerald-600 hover:text-emerald-800 disabled:opacity-50"
+                    >
+                      {sendingId === promotion.id ? "Gönderiliyor..." : "Bildirim Gönder"}
+                    </button>
                     <button
                       onClick={() => openEditForm(promotion)}
                       className="mr-3 text-neutral-600 hover:text-neutral-900"

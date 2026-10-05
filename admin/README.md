@@ -25,17 +25,33 @@ kendi Supabase projenizin değerleriyle doldurun:
 cp .env.local.example .env.local
 ```
 
-Gerekli iki değer **Supabase Dashboard → Project Settings → API** sayfasında
+Gerekli değerler **Supabase Dashboard → Project Settings → API** sayfasında
 bulunur:
 
 - `NEXT_PUBLIC_SUPABASE_URL` → "Project URL"
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` → "anon public" API key
+- `SUPABASE_SERVICE_ROLE_KEY` → "service_role" key (**gizli**, bkz. aşağıda)
 
 > **Not:** Next.js'te tarayıcıya açık env değişkenleri `NEXT_PUBLIC_` prefix'i
 > ister. Bu, `mobile/` (Expo) tarafındaki `EXPO_PUBLIC_` prefix'inden
 > farklıdır — iki projeye de env eklerken bu farkı karıştırmayın.
 >
 > `.env.local` dosyası `.gitignore`'dadır ve commit edilmemelidir.
+
+#### `SUPABASE_SERVICE_ROLE_KEY` neden gerekli?
+
+`push_tokens` tablosunda RLS, kullanıcının sadece kendi token'ını görmesine
+izin verir — admin için bir "tüm satırları gör" politikası yoktur (bkz.
+`backend/supabase/migrations/0001_init.sql`). Kampanya bildirimini **tüm**
+kayıtlı kullanıcılara göndermek için RLS'i bypass edip `push_tokens`
+tablosunun tamamını okumak gerekir; bu yüzden `app/api/send-notification`
+route'u, normal (anon) `lib/supabase.ts` client'ı yerine `SUPABASE_SERVICE_ROLE_KEY`
+ile oluşturulmuş `lib/supabase-admin.ts` client'ını kullanır.
+
+Bu key **tüm RLS politikalarını bypass eder** ve asla tarayıcıya
+sızdırılmamalıdır — bilerek `NEXT_PUBLIC_` prefix'i taşımaz, böylece Next.js
+onu client bundle'ına dahil etmez. `lib/supabase-admin.ts` sadece server-side
+kod (API route'lar) içinde import edilmelidir.
 
 ### Geliştirme sunucusunu çalıştırma
 
