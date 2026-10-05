@@ -5,11 +5,15 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { mockLoyaltySummary } from '@/data/mock';
-import { useProducts } from '@/hooks/use-supabase-data';
+import { useRegisterPushToken } from '@/hooks/use-register-push-token';
+import { usePromotions, useProducts } from '@/hooks/use-supabase-data';
 import { useAuth } from '@/lib/auth-context';
 
 export default function HomeScreen() {
+  useRegisterPushToken();
+
   const { data: products } = useProducts();
+  const { data: promotions } = usePromotions();
   const { isConfigured, user, profile } = useAuth();
   const featured = products.slice(0, 3);
 
@@ -39,6 +43,20 @@ export default function HomeScreen() {
             {mockLoyaltySummary.tier} · bir sonraki seviye {mockLoyaltySummary.nextTierAt} puan
           </ThemedText>
         </ThemedView>
+
+        {promotions.length > 0 && (
+          <ThemedView style={styles.section}>
+            <ThemedText type="smallBold">Kampanyalar</ThemedText>
+            {promotions.map((promotion) => (
+              <ThemedView key={promotion.id} type="backgroundElement" style={styles.promotionCard}>
+                <ThemedText type="default">{promotion.title}</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  {promotion.body}
+                </ThemedText>
+              </ThemedView>
+            ))}
+          </ThemedView>
+        )}
 
         <ThemedView style={styles.section}>
           <ThemedText type="smallBold">Öne Çıkanlar</ThemedText>
@@ -96,5 +114,10 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: Spacing.half,
     backgroundColor: 'transparent',
+  },
+  promotionCard: {
+    borderRadius: Spacing.three,
+    padding: Spacing.three,
+    gap: Spacing.half,
   },
 });

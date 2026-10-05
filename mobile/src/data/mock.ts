@@ -1,4 +1,4 @@
-import type { Category, Location, LoyaltySummary, Product } from '@/types/models';
+import type { Category, Location, LoyaltySummary, Product, Promotion } from '@/types/models';
 
 // Gerçek içerik Supabase bağlanana kadar ekranları geliştirmek için kullanılan geçici veri.
 export const mockCategories: Category[] = [
@@ -76,3 +76,20 @@ export const mockLoyaltySummary: LoyaltySummary = {
   tier: 'Kahve Sever',
   nextTierAt: 500,
 };
+
+export const mockPromotions: Promotion[] = [
+  {
+    id: 'promo-second-coffee',
+    title: 'İkinci Kahve Yarı Fiyatına',
+    body: 'Bugün ilk kahveni al, ikincisini yarı fiyatına keyifle iç.',
+    startsAt: null,
+    endsAt: null,
+  },
+  {
+    id: 'promo-loyalty-double',
+    title: 'Bu Hafta Puanlar 2 Katı',
+    body: 'Sadakat programı üyeleri bu hafta yaptıkları her alışverişte 2 kat puan kazanır.',
+    startsAt: null,
+    endsAt: null,
+  },
+];

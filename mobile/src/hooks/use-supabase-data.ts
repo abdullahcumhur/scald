@@ -6,10 +6,10 @@
 
 import { useEffect, useState } from 'react';
 
-import { mockCategories, mockLocations, mockProducts } from '@/data/mock';
-import { mapCategory, mapLocation, mapProduct } from '@/lib/mappers';
+import { mockCategories, mockLocations, mockProducts, mockPromotions } from '@/data/mock';
+import { mapCategory, mapLocation, mapProduct, mapPromotion } from '@/lib/mappers';
 import { supabase } from '@/lib/supabase';
-import type { Category, Location, Product } from '@/types/models';
+import type { Category, Location, Product, Promotion } from '@/types/models';
 
 const hasSupabaseConfig = Boolean(process.env.EXPO_PUBLIC_SUPABASE_URL);
 
@@ -83,6 +83,52 @@ export function useProducts(): DataState<Product[]> {
           return;
         }
         setState({ data: data.map(mapProduct), loading: false, error: null });
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  return state;
+}
+
+export function usePromotions(): DataState<Promotion[]> {
+  const [state, setState] = useState<DataState<Promotion[]>>({
+    data: mockPromotions,
+    loading: hasSupabaseConfig,
+    error: null,
+  });
+
+  useEffect(() => {
+    let isMounted = true;
+
+    if (!hasSupabaseConfig) {
+      console.warn('[usePromotions] Supabase yapılandırılmamış, mock kampanyalar kullanılıyor.');
+      return;
+    }
+
+    supabase
+      .from('promotions')
+      .select('*')
+      .then(({ data, error }) => {
+        if (!isMounted) return;
+        if (error || !data) {
+          console.warn('[usePromotions] Supabase sorgusu başarısız, mock kampanyalara dönülüyor:', error?.message);
+          setState({ data: mockPromotions, loading: false, error: error?.message ?? 'unknown error' });
+          return;
+        }
+
+        const now = Date.now();
+        const active = data
+          .map(mapPromotion)
+          .filter((promotion) => {
+            const startsOk = !promotion.startsAt || new Date(promotion.startsAt).getTime() <= now;
+            const endsOk = !promotion.endsAt || new Date(promotion.endsAt).getTime() >= now;
+            return startsOk && endsOk;
+          });
+
+        setState({ data: active, loading: false, error: null });
       });
 
     return () => {

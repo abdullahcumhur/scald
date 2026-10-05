@@ -1,7 +1,7 @@
 // Supabase'den dönen snake_case satırları src/types/models.ts'deki camelCase
 // domain tiplerine çeviren saf dönüştürücü fonksiyonlar.
 
-import type { Category, Location, Product } from '@/types/models';
+import type { Category, Location, Product, Promotion } from '@/types/models';
 
 type SupabaseCategoryRow = {
   id: string;
@@ -29,6 +29,15 @@ type SupabaseLocationRow = {
   // `opening_hours` jsonb olarak saklanıyor: düz metin, { [gun]: saat } şeklinde
   // bir obje ya da henüz tanımsız (null) olabilir.
   opening_hours: unknown;
+};
+
+type SupabasePromotionRow = {
+  id: string;
+  title: string;
+  body: string | null;
+  image_url: string | null;
+  starts_at: string | null;
+  ends_at: string | null;
 };
 
 export function mapCategory(row: SupabaseCategoryRow): Category {
@@ -75,5 +84,16 @@ export function mapLocation(row: SupabaseLocationRow): Location {
     lng: row.lng ?? 0,
     phone: row.phone ?? undefined,
     openingHours: formatOpeningHours(row.opening_hours),
+  };
+}
+
+export function mapPromotion(row: SupabasePromotionRow): Promotion {
+  return {
+    id: row.id,
+    title: row.title,
+    body: row.body ?? '',
+    imageUrl: row.image_url ?? undefined,
+    startsAt: row.starts_at,
+    endsAt: row.ends_at,
   };
 }

@@ -29,3 +29,12 @@ export type LoyaltySummary = {
   tier: string;
   nextTierAt: number;
 };
+
+export type Promotion = {
+  id: string;
+  title: string;
+  body: string;
+  imageUrl?: string;
+  startsAt: string | null;
+  endsAt: string | null;
+};
