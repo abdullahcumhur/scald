@@ -10,44 +10,16 @@
 //      okunamaz.)
 //   3. `push_tokens` tablosundaki TÜM `expo_push_token` değerleri (service
 //      role client ile, RLS bypass edilerek) çekilir.
-//   4. Expo Push API'sine (tek istekte en fazla 100 mesaj) 100'lük gruplar
-//      halinde gönderilir.
+//   4. `sendExpoPushNotifications` ile Expo Push API'sine (tek istekte en
+//      fazla 100 mesaj) 100'lük gruplar halinde gönderilir.
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-
-const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
-const EXPO_PUSH_CHUNK_SIZE = 100;
+import { sendExpoPushNotifications } from "@/lib/expo-push";
 
 type SendNotificationBody = {
   title?: unknown;
   body?: unknown;
 };
-
-type ExpoPushMessage = {
-  to: string;
-  title: string;
-  body: string;
-  sound: "default";
-};
-
-type ExpoPushTicket = {
-  status: "ok" | "error";
-  message?: string;
-  id?: string;
-};
-
-type ExpoPushResponse = {
-  data?: ExpoPushTicket[];
-  errors?: unknown[];
-};
-
-function chunk<T>(items: T[], size: number): T[][] {
-  const chunks: T[][] = [];
-  for (let i = 0; i < items.length; i += size) {
-    chunks.push(items.slice(i, i + size));
-  }
-  return chunks;
-}
 
 export async function POST(request: Request) {
   try {
@@ -109,47 +81,7 @@ export async function POST(request: Request) {
     }
 
     // --- 4. Expo Push API'sine 100'lük gruplar halinde gönder --------------
-    let sent = 0;
-    let failed = 0;
-
-    for (const tokenChunk of chunk(tokens, EXPO_PUSH_CHUNK_SIZE)) {
-      const messages: ExpoPushMessage[] = tokenChunk.map((to) => ({
-        to,
-        title,
-        body: message,
-        sound: "default",
-      }));
-
-      const expoResponse = await fetch(EXPO_PUSH_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify(messages),
-      });
-
-      if (!expoResponse.ok) {
-        failed += tokenChunk.length;
-        continue;
-      }
-
-      const result = (await expoResponse.json()) as ExpoPushResponse;
-      const tickets = result.data ?? [];
-
-      if (tickets.length === 0) {
-        failed += tokenChunk.length;
-        continue;
-      }
-
-      for (const ticket of tickets) {
-        if (ticket.status === "ok") {
-          sent += 1;
-        } else {
-          failed += 1;
-        }
-      }
-    }
+    const { sent, failed } = await sendExpoPushNotifications(tokens, title, message);
 
     return NextResponse.json({ sent, failed });
   } catch (error) {

@@ -90,8 +90,29 @@ export default function OrdersPage() {
       return;
     }
 
+    notifyOrderStatus(orderId);
+
     await fetchOrders({ silent: true });
     setUpdatingId(null);
+  }
+
+  // Müşteriye sipariş durumu değişikliğini bildirir (fire-and-forget).
+  // Başarısız olursa UI'ı bloklamadan sadece konsola yazar.
+  function notifyOrderStatus(orderId: string) {
+    (async () => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+      if (!accessToken) return;
+
+      await fetch("/api/notify-order-status", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ orderId }),
+      });
+    })().catch((err) => console.error("notify-order-status failed", err));
   }
 
   async function handleCancel(orderId: string) {
