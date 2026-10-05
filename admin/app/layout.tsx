@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -15,6 +15,20 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Scald Coffee Admin",
   description: "Scald Coffee — menü, şube, kampanya ve sadakat puanı yönetim paneli",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Scald Admin",
+  },
+  icons: {
+    icon: "/pwa-icon-192.png",
+    apple: "/pwa-icon-192.png",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#140A61",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
