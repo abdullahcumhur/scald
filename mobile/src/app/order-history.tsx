@@ -7,6 +7,7 @@ import { Pressable, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 
+import { LoadingState } from '@/components/loading-state';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, Spacing } from '@/constants/theme';
@@ -124,9 +125,7 @@ export default function OrderHistoryScreen() {
             Bu özellik için Supabase yapılandırması gerekiyor.
           </ThemedText>
         ) : loading ? (
-          <ThemedText type="small" themeColor="textSecondary">
-            Yükleniyor...
-          </ThemedText>
+          <LoadingState />
         ) : orders.length === 0 ? (
           <ThemedText type="small" themeColor="textSecondary">
             Henüz geçmiş siparişin yok.

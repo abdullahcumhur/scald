@@ -11,6 +11,7 @@ import { Pressable, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from 'expo-router';
 
+import { LoadingState } from '@/components/loading-state';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, Spacing } from '@/constants/theme';
@@ -84,7 +85,7 @@ function statusLabel(status: ActiveOrder['status']): string {
 export default function CartScreen() {
   const theme = useTheme();
   const { isConfigured, user } = useAuth();
-  const { items, removeItem, clear, totalPrice } = useCart();
+  const { items, removeItem, updateQuantity, clear, totalPrice } = useCart();
   const { data: locations, loading: locationsLoading } = useLocations();
 
   const [activeOrder, setActiveOrder] = useState<ActiveOrder | null>(null);
@@ -194,9 +195,7 @@ export default function CartScreen() {
           <ThemedText type="title" style={styles.title}>
             Sepet
           </ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
-            Yükleniyor...
-          </ThemedText>
+          <LoadingState />
         </SafeAreaView>
       </ThemedView>
     );
@@ -273,16 +272,33 @@ export default function CartScreen() {
                   <ThemedView style={styles.itemInfo}>
                     <ThemedText type="default">{item.product.name}</ThemedText>
                     <ThemedText type="small" themeColor="textSecondary">
-                      {item.quantity} adet × {item.product.price}₺
+                      {item.product.price}₺ / adet
                     </ThemedText>
-                  </ThemedView>
-                  <ThemedView style={styles.itemActions}>
-                    <ThemedText type="smallBold">{item.product.price * item.quantity}₺</ThemedText>
                     <Pressable onPress={() => removeItem(item.product.id)}>
                       <ThemedText type="small" style={styles.removeText}>
                         Kaldır
                       </ThemedText>
                     </Pressable>
+                  </ThemedView>
+                  <ThemedView style={styles.itemActions}>
+                    <ThemedView style={styles.stepper}>
+                      <Pressable
+                        onPress={() => updateQuantity(item.product.id, item.quantity - 1)}
+                        hitSlop={8}
+                        style={styles.stepperButton}>
+                        <ThemedText type="smallBold">−</ThemedText>
+                      </Pressable>
+                      <ThemedText type="smallBold" style={styles.stepperValue}>
+                        {item.quantity}
+                      </ThemedText>
+                      <Pressable
+                        onPress={() => updateQuantity(item.product.id, item.quantity + 1)}
+                        hitSlop={8}
+                        style={styles.stepperButton}>
+                        <ThemedText type="smallBold">+</ThemedText>
+                      </Pressable>
+                    </ThemedView>
+                    <ThemedText type="smallBold">{item.product.price * item.quantity}₺</ThemedText>
                   </ThemedView>
                 </ThemedView>
               ))}
@@ -400,8 +416,26 @@ const styles = StyleSheet.create({
   },
   itemActions: {
     alignItems: 'flex-end',
-    gap: Spacing.one,
+    gap: Spacing.two,
     backgroundColor: 'transparent',
+  },
+  stepper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    backgroundColor: 'transparent',
+  },
+  stepperButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.06)',
+  },
+  stepperValue: {
+    minWidth: 20,
+    textAlign: 'center',
   },
   removeText: {
     color: '#D3453B',

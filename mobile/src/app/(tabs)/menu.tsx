@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { LoadingState } from '@/components/loading-state';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, Spacing } from '@/constants/theme';
@@ -35,9 +36,7 @@ export default function MenuScreen() {
         </ThemedText>
 
         {isLoading ? (
-          <ThemedText type="small" themeColor="textSecondary">
-            Yükleniyor...
-          </ThemedText>
+          <LoadingState />
         ) : (
           <>
             <ScrollView
