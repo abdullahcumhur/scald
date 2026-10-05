@@ -1,11 +1,12 @@
 import { Image } from 'expo-image';
-import { ScrollView, StyleSheet } from 'react-native';
+import { Dimensions, ScrollView, StyleSheet } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
+import { Radius, Spacing } from '@/constants/theme';
 
-const CARD_WIDTH = 220;
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const CARD_WIDTH = Math.min(SCREEN_WIDTH * 0.78, 300);
 const CARD_GAP = Spacing.three;
 
 type AmbiancePhoto = {
@@ -74,15 +75,15 @@ const styles = StyleSheet.create({
   },
   card: {
     width: CARD_WIDTH,
-    borderRadius: Spacing.four,
+    borderRadius: Radius.card,
     overflow: 'hidden',
   },
   photo: {
     width: CARD_WIDTH,
-    height: 260,
+    height: 320,
   },
   caption: {
-    paddingHorizontal: Spacing.two,
+    paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
   },
 });
