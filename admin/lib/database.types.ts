@@ -45,6 +45,11 @@ export type Promotion = {
   updated_at: string;
 };
 
+// staff_role/location_id/is_active: bkz. backend/supabase/migrations/0009_staff_roles.sql.
+// staff_role null olan bir profil "personel değil" demektir (sıradan müşteri,
+// ya da henüz role atanmamış bir is_admin hesabı).
+export type StaffRole = "cashier" | "manager" | "owner";
+
 export type Profile = {
   id: string;
   full_name: string | null;
@@ -53,6 +58,9 @@ export type Profile = {
   coffee_stamps: number;
   free_coffees: number;
   is_admin: boolean;
+  staff_role: StaffRole | null;
+  location_id: string | null;
+  is_active: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -84,6 +92,8 @@ export type CoffeeStampTransaction = {
 // Şema: backend/supabase/migrations/0003_orders.sql ("Sırasız Teslim Al")
 export type OrderStatus = "pending" | "preparing" | "ready" | "completed" | "cancelled";
 
+export type OrderType = "pickup" | "table";
+
 export type Order = {
   id: string;
   user_id: string;
@@ -92,6 +102,7 @@ export type Order = {
   pickup_code: string;
   requested_minutes: number;
   total_amount: number;
+  order_type: OrderType;
   note: string | null;
   created_at: string;
   updated_at: string;
