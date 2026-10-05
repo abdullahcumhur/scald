@@ -1,3 +1,4 @@
+import { Image } from 'expo-image';
 import { useState } from 'react';
 import {
   KeyboardAvoidingView,
@@ -59,9 +60,13 @@ export function AuthScreen() {
           style={styles.flex}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <View style={styles.content}>
-            <ThemedText type="title" style={styles.title}>
-              Scald Coffee
-            </ThemedText>
+            <View style={styles.logoWrapper}>
+              <Image
+                source={require('@/assets/images/brand/scald-logo.png')}
+                style={styles.logo}
+                contentFit="contain"
+              />
+            </View>
             <ThemedText type="small" themeColor="textSecondary" style={styles.subtitle}>
               {mode === 'login' ? 'Hesabınla giriş yap' : 'Yeni bir hesap oluştur'}
             </ThemedText>
@@ -170,8 +175,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
     gap: Spacing.three,
   },
-  title: {
-    textAlign: 'center',
+  logoWrapper: {
+    alignSelf: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: Spacing.three,
+    paddingVertical: Spacing.three,
+    paddingHorizontal: Spacing.five,
+  },
+  logo: {
+    width: 220,
+    height: 66,
   },
   subtitle: {
     textAlign: 'center',

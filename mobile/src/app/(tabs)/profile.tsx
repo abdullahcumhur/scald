@@ -1,5 +1,5 @@
 import QRCode from 'react-native-qrcode-svg';
-import { Pressable, ScrollView, StyleSheet } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
@@ -82,6 +82,15 @@ export default function ProfileScreen() {
                 </ThemedView>
               </Pressable>
             ))}
+
+            <Pressable onPress={() => Linking.openURL('https://www.instagram.com/scald.coffee/')}>
+              <ThemedView type="backgroundElement" style={styles.menuRow}>
+                <ThemedText type="default">Instagram&apos;da Takip Et</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  @scald.coffee
+                </ThemedText>
+              </ThemedView>
+            </Pressable>
 
             {isConfigured && user && (
               <Pressable onPress={() => signOut()}>

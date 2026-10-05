@@ -1,3 +1,4 @@
+import { Image } from 'expo-image';
 import { Linking, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -38,19 +39,29 @@ export default function LocationsScreen() {
             <ScrollView contentContainerStyle={[styles.list, { paddingBottom: BottomTabInset }]}>
               {locations.map((location) => (
                 <ThemedView key={location.id} type="backgroundElement" style={styles.card}>
-                  <ThemedText type="default">{location.name}</ThemedText>
-                  <ThemedText type="small" themeColor="textSecondary">
-                    {location.address}
-                  </ThemedText>
-                  <ThemedText type="small" themeColor="textSecondary">
-                    {location.openingHours}
-                  </ThemedText>
-
-                  <Pressable onPress={() => openDirections(location)}>
-                    <ThemedText type="linkPrimary" themeColor="primary">
-                      Yol tarifi al
+                  {location.imageUrl && (
+                    <Image
+                      source={{ uri: location.imageUrl }}
+                      style={styles.photo}
+                      contentFit="cover"
+                      transition={200}
+                    />
+                  )}
+                  <ThemedView style={styles.cardContent}>
+                    <ThemedText type="default">{location.name}</ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      {location.address}
                     </ThemedText>
-                  </Pressable>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      {location.openingHours}
+                    </ThemedText>
+
+                    <Pressable onPress={() => openDirections(location)}>
+                      <ThemedText type="linkPrimary" themeColor="primary">
+                        Yol tarifi al
+                      </ThemedText>
+                    </Pressable>
+                  </ThemedView>
                 </ThemedView>
               ))}
             </ScrollView>
@@ -80,7 +91,15 @@ const styles = StyleSheet.create({
   },
   card: {
     borderRadius: Spacing.three,
+    overflow: 'hidden',
+  },
+  photo: {
+    width: '100%',
+    aspectRatio: 16 / 9,
+  },
+  cardContent: {
     padding: Spacing.four,
     gap: Spacing.one,
+    backgroundColor: 'transparent',
   },
 });

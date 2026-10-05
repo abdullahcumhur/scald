@@ -7,23 +7,25 @@ import '@/global.css';
 
 import { Platform } from 'react-native';
 
-// Placeholder brand palette — swap once real Scald Coffee brand colors/assets are available.
+// scaldcoffee.com'daki gerçek logo/marka renklerinden alınmıştır (logo mürekkep
+// rengi #140A61, site topbar'ı #14242e). Koyu modda okunabilirlik için primary
+// daha açık bir tona çekildi.
 export const Colors = {
   light: {
-    text: '#1C1410',
+    text: '#14151A',
     background: '#ffffff',
-    backgroundElement: '#F5EFE8',
-    backgroundSelected: '#EADFD1',
-    textSecondary: '#6B5D50',
-    primary: '#6F4E37',
+    backgroundElement: '#F4F5F8',
+    backgroundSelected: '#E3E5F2',
+    textSecondary: '#5B5F6D',
+    primary: '#140A61',
   },
   dark: {
-    text: '#F5EFE8',
-    background: '#15100D',
-    backgroundElement: '#241C17',
-    backgroundSelected: '#332821',
-    textSecondary: '#B4A496',
-    primary: '#C8956D',
+    text: '#F4F5F8',
+    background: '#0E0E14',
+    backgroundElement: '#1B1C26',
+    backgroundSelected: '#272A3C',
+    textSecondary: '#A7ABBD',
+    primary: '#8B93E8',
   },
 } as const;
 

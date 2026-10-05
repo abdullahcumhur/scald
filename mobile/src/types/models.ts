@@ -22,6 +22,7 @@ export type Location = {
   lng: number;
   phone?: string;
   openingHours: string;
+  imageUrl?: string;
 };
 
 export type LoyaltySummary = {

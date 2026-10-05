@@ -1,9 +1,8 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useColorScheme } from 'react-native';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import AppTabs from '@/components/app-tabs';
 import { AuthScreen } from '@/components/auth-screen';
 import { ThemedView } from '@/components/themed-view';
 import { AuthProvider, useAuth } from '@/lib/auth-context';
@@ -24,7 +23,16 @@ function RootNavigator() {
     return <AuthScreen />;
   }
 
-  return <AppTabs />;
+  // (tabs) grubu NativeTabs'i barındırır. order-history gibi tab olmayan
+  // ekranlar bu Stack'e kardeş olarak eklenir ki router.push ile erişilebilsin
+  // — NativeTabs tek başına, Trigger olarak tanımlanmamış route'lara
+  // navigasyonu native tarafta sessizce yok sayar.
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="order-history" options={{ presentation: 'card' }} />
+    </Stack>
+  );
 }
 
 export default function TabLayout() {

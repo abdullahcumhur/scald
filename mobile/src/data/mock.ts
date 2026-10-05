@@ -50,24 +50,41 @@ export const mockProducts: Product[] = [
   },
 ];
 
+// scaldcoffee.com'dan alınan gerçek şube bilgileri (fotoğraflar Supabase
+// Storage'daki "location-photos" bucket'ında barındırılıyor).
+const LOCATION_PHOTOS_BASE =
+  'https://zhotyrulimzkyoceaawi.supabase.co/storage/v1/object/public/location-photos';
+
 export const mockLocations: Location[] = [
   {
-    id: 'kadikoy',
-    name: 'Scald Kadıköy',
-    address: 'Moda Cd. No:1, Kadıköy / İstanbul',
-    lat: 40.9877,
-    lng: 29.0271,
-    phone: '+90 216 000 00 00',
-    openingHours: 'Her gün 08:00 - 22:00',
+    id: 'akcakoca',
+    name: 'Scald Akçakoca',
+    address: 'Osmaniye, Atatürk Cd., 81650 Akçakoca/Düzce',
+    lat: 41.0896633,
+    lng: 31.1302742,
+    phone: '+90 545 956 31 45',
+    openingHours: 'Çalışma saatleri için şubeyi arayınız',
+    imageUrl: `${LOCATION_PHOTOS_BASE}/location-akcakoca.jpg`,
   },
   {
-    id: 'besiktas',
-    name: 'Scald Beşiktaş',
-    address: 'Barbaros Blv. No:1, Beşiktaş / İstanbul',
-    lat: 41.0431,
-    lng: 29.0073,
-    phone: '+90 212 000 00 00',
-    openingHours: 'Her gün 08:00 - 22:00',
+    id: 'wolf-garden',
+    name: 'Scald Wolf Garden',
+    address: 'Değirmen ağzı mevki, Hacı Yusuflar, Susam Sk. No: 5, 81650 Akçakoca/Düzce',
+    lat: 41.0820551,
+    lng: 31.1009379,
+    phone: '+90 545 956 31 45',
+    openingHours: 'Çalışma saatleri için şubeyi arayınız',
+    imageUrl: `${LOCATION_PHOTOS_BASE}/location-wolf-garden.jpg`,
+  },
+  {
+    id: 'yeldegirmeni',
+    name: 'Scald Kadıköy Yeldeğirmeni',
+    address: 'Rasimpaşa, Karakolhane Cd. No:30, 34716 Kadıköy/İstanbul',
+    lat: 40.9945132,
+    lng: 29.0298494,
+    phone: '+90 545 956 31 45',
+    openingHours: 'Çalışma saatleri için şubeyi arayınız',
+    imageUrl: `${LOCATION_PHOTOS_BASE}/location-yeldegirmeni.jpg`,
   },
 ];
 

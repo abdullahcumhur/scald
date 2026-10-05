@@ -29,6 +29,7 @@ type SupabaseLocationRow = {
   // `opening_hours` jsonb olarak saklanıyor: düz metin, { [gun]: saat } şeklinde
   // bir obje ya da henüz tanımsız (null) olabilir.
   opening_hours: unknown;
+  image_url: string | null;
 };
 
 type SupabasePromotionRow = {
@@ -84,6 +85,7 @@ export function mapLocation(row: SupabaseLocationRow): Location {
     lng: row.lng ?? 0,
     phone: row.phone ?? undefined,
     openingHours: formatOpeningHours(row.opening_hours),
+    imageUrl: row.image_url ?? undefined,
   };
 }
 
