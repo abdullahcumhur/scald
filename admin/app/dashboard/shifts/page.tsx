@@ -69,6 +69,101 @@ function formatWeekRange(weekStart: string): string {
   return `${startLabel} – ${endLabel}`;
 }
 
+const DAY_LABELS = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
+
+// Personel bazında tutarlı bir renk ataması — her personel haftanın her
+// yerinde hep aynı renkte görünsün diye id'nin basit bir hash'i üzerinden
+// sabit bir palet indeksi seçiliyor.
+const BAR_COLORS = [
+  "bg-brand",
+  "bg-emerald-500",
+  "bg-amber-500",
+  "bg-sky-500",
+  "bg-rose-500",
+  "bg-violet-500",
+  "bg-teal-500",
+  "bg-orange-500",
+];
+
+function colorForStaff(staffId: string): string {
+  let hash = 0;
+  for (let i = 0; i < staffId.length; i++) hash = (hash * 31 + staffId.charCodeAt(i)) >>> 0;
+  return BAR_COLORS[hash % BAR_COLORS.length];
+}
+
+// Vardiyaları personel bazında grupluyor ve her birinin hafta içindeki
+// konumunu (gün çizgileri + saat bazlı sol/genişlik yüzdesi) hesaplıyor —
+// tek satırda haftanın tamamını gösteren bir Gantt/zaman çizelgesi için.
+function ShiftGanttChart({ shifts, weekStart }: { shifts: ShiftWithDetails[]; weekStart: string }) {
+  const weekStartDate = new Date(`${weekStart}T00:00:00`);
+  const weekMs = 7 * 24 * 60 * 60 * 1000;
+
+  const rows = new Map<string, { name: string; shifts: ShiftWithDetails[] }>();
+  for (const shift of shifts) {
+    const key = shift.staff_id;
+    if (!rows.has(key)) {
+      rows.set(key, { name: shift.profiles?.full_name ?? "(İsimsiz)", shifts: [] });
+    }
+    rows.get(key)!.shifts.push(shift);
+  }
+
+  if (rows.size === 0) return null;
+
+  return (
+    <div className="mb-6 overflow-x-auto rounded-lg border border-neutral-200 bg-white p-4">
+      <div className="min-w-[700px]">
+        {/* Gün başlıkları */}
+        <div className="ml-36 grid grid-cols-7 border-b border-neutral-200 pb-2 text-center text-xs font-medium text-neutral-500">
+          {DAY_LABELS.map((label, i) => {
+            const d = new Date(weekStartDate);
+            d.setDate(d.getDate() + i);
+            return (
+              <div key={label}>
+                {label} <span className="text-neutral-400">{d.getDate()}</span>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="divide-y divide-neutral-100">
+          {Array.from(rows.entries()).map(([staffId, row]) => (
+            <div key={staffId} className="flex items-center gap-3 py-2">
+              <div className="w-36 shrink-0 truncate text-sm text-neutral-700" title={row.name}>
+                {row.name}
+              </div>
+              <div className="relative h-8 flex-1">
+                {/* Gün ayırıcı dikey çizgiler */}
+                <div className="pointer-events-none absolute inset-0 grid grid-cols-7">
+                  {DAY_LABELS.map((label) => (
+                    <div key={label} className="border-l border-neutral-100 first:border-l-0" />
+                  ))}
+                </div>
+                {row.shifts.map((shift) => {
+                  const start = new Date(shift.starts_at).getTime();
+                  const end = new Date(shift.ends_at).getTime();
+                  const leftPct = Math.max(0, ((start - weekStartDate.getTime()) / weekMs) * 100);
+                  const widthPct = Math.max(1.5, ((end - start) / weekMs) * 100);
+                  const timeLabel = `${new Date(shift.starts_at).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}–${new Date(shift.ends_at).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}`;
+                  return (
+                    <div
+                      key={shift.id}
+                      title={`${row.name} · ${timeLabel}${shift.note ? " · " + shift.note : ""}`}
+                      className={`absolute top-1 flex h-6 items-center overflow-hidden rounded px-1.5 text-[10px] font-medium whitespace-nowrap text-white ${colorForStaff(staffId)}`}
+                      style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
+                    >
+                      {timeLabel}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ShiftsPage() {
   const [locations, setLocations] = useState<Location[]>([]);
   const [staffOptions, setStaffOptions] = useState<StaffOption[]>([]);
@@ -274,6 +369,8 @@ export default function ShiftsPage() {
 
         <p className="ml-auto text-sm text-neutral-500">{formatWeekRange(weekStart)}</p>
       </div>
+
+      {!loading && <ShiftGanttChart shifts={shifts} weekStart={weekStart} />}
 
       {showForm && (
         <form
