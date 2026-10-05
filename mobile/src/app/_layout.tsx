@@ -5,6 +5,7 @@ import { useColorScheme } from 'react-native';
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { AuthScreen } from '@/components/auth-screen';
 import { ThemedView } from '@/components/themed-view';
+import { useAppFonts } from '@/hooks/use-app-fonts';
 import { AuthProvider, useAuth } from '@/lib/auth-context';
 import { CartProvider } from '@/lib/cart-context';
 
@@ -37,6 +38,17 @@ function RootNavigator() {
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const [fontsLoaded] = useAppFonts();
+
+  // Fontlar yüklenene kadar hiçbir şey render etmiyoruz; splash screen zaten
+  // görünür kaldığı için (SplashScreen.preventAutoHideAsync + hideAsync'i
+  // yalnızca AnimatedSplashOverlay çağırıyor) kullanıcıya boş ekran gibi
+  // görünmez. Bu sayede sistem fontuyla render olup sonra marka fontuna
+  // geçen bir "flash" yaşanmaz.
+  if (!fontsLoaded) {
+    return null;
+  }
+
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <AuthProvider>

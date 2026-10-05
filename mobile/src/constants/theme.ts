@@ -41,18 +41,39 @@ export const Fonts = Platform.select({
     rounded: 'ui-rounded',
     /** iOS `UIFontDescriptorSystemDesignMonospaced` */
     mono: 'ui-monospace',
+    // scaldcoffee.com ile eşleşen marka fontları: başlıklarda Cormorant
+    // Garamond (serif), gövde metninde Manrope (sans-serif). expo-font ile
+    // src/hooks/use-app-fonts.ts içinde yüklenirler.
+    heading: 'CormorantGaramond_600SemiBold',
+    headingBold: 'CormorantGaramond_700Bold',
+    body: 'Manrope_400Regular',
+    bodyMedium: 'Manrope_500Medium',
+    bodySemiBold: 'Manrope_600SemiBold',
+    bodyBold: 'Manrope_700Bold',
   },
   default: {
     sans: 'normal',
     serif: 'serif',
     rounded: 'normal',
     mono: 'monospace',
+    heading: 'CormorantGaramond_600SemiBold',
+    headingBold: 'CormorantGaramond_700Bold',
+    body: 'Manrope_400Regular',
+    bodyMedium: 'Manrope_500Medium',
+    bodySemiBold: 'Manrope_600SemiBold',
+    bodyBold: 'Manrope_700Bold',
   },
   web: {
     sans: 'var(--font-display)',
     serif: 'var(--font-serif)',
     rounded: 'var(--font-rounded)',
     mono: 'var(--font-mono)',
+    heading: 'CormorantGaramond_600SemiBold',
+    headingBold: 'CormorantGaramond_700Bold',
+    body: 'Manrope_400Regular',
+    bodyMedium: 'Manrope_500Medium',
+    bodySemiBold: 'Manrope_600SemiBold',
+    bodyBold: 'Manrope_700Bold',
   },
 });
 
