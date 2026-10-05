@@ -138,7 +138,7 @@ export default function LoyaltyPage() {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full rounded-md bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-700 disabled:opacity-50"
+          className="w-full rounded-md bg-brand px-3 py-2 text-sm font-medium text-white hover:bg-brand-hover disabled:opacity-50"
         >
           {submitting ? "Kaydediliyor..." : "İşlemi Kaydet"}
         </button>

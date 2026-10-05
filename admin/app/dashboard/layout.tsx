@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -40,8 +41,16 @@ export default function DashboardLayout({
     <div className="min-h-screen bg-neutral-50">
       <header className="border-b border-neutral-200 bg-white">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-          <Link href="/dashboard" className="text-sm font-semibold text-neutral-900">
-            Scald Coffee Admin
+          <Link href="/dashboard" className="flex items-center gap-2">
+            <Image
+              src="/scald-logo.png"
+              alt="Scald Coffee"
+              width={130}
+              height={40}
+              priority
+              className="h-8 w-auto"
+            />
+            <span className="sr-only">Scald Coffee Admin</span>
           </Link>
           <div className="flex items-center gap-3 text-sm text-neutral-500">
             <span>{profile.full_name ?? "Admin"}</span>
@@ -58,7 +67,7 @@ export default function DashboardLayout({
             <Link
               key={item.href}
               href={item.href}
-              className="whitespace-nowrap rounded-md px-3 py-1.5 text-neutral-600 transition hover:bg-neutral-100 hover:text-neutral-900"
+              className="whitespace-nowrap rounded-md px-3 py-1.5 text-neutral-600 transition hover:bg-brand/10 hover:text-brand"
             >
               {item.label}
             </Link>

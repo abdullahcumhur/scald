@@ -132,7 +132,7 @@ export default function LocationsPage() {
         <h1 className="text-lg font-semibold text-neutral-900">Şubeler</h1>
         <button
           onClick={openCreateForm}
-          className="rounded-md bg-neutral-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-neutral-700"
+          className="rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-hover"
         >
           + Yeni şube
         </button>
@@ -213,7 +213,7 @@ export default function LocationsPage() {
             <button
               type="submit"
               disabled={saving}
-              className="rounded-md bg-neutral-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-neutral-700 disabled:opacity-50"
+              className="rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-hover disabled:opacity-50"
             >
               {saving ? "Kaydediliyor..." : "Kaydet"}
             </button>

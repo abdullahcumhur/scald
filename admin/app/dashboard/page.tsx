@@ -105,7 +105,7 @@ export default function DashboardHome() {
       <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
         {STAT_CARDS.map((card) => (
           <div key={card.label} className="rounded-lg bg-white p-4 shadow-sm">
-            <p className="text-2xl font-semibold text-neutral-900">
+            <p className="text-2xl font-semibold text-brand">
               {loading || card.value === null ? "..." : card.value}
             </p>
             <p className="text-sm text-neutral-500">{card.label}</p>
@@ -118,7 +118,7 @@ export default function DashboardHome() {
           <Link
             key={section.href}
             href={section.href}
-            className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm transition hover:border-neutral-400 hover:shadow"
+            className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm transition hover:border-brand hover:shadow"
           >
             <h2 className="mb-1 font-medium text-neutral-900">{section.title}</h2>
             <p className="text-sm text-neutral-500">{section.description}</p>
