@@ -1,3 +1,4 @@
+import QRCode from 'react-native-qrcode-svg';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -5,12 +6,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, Spacing } from '@/constants/theme';
 import { mockLoyaltySummary } from '@/data/mock';
-
-// Gerçek kullanıcı verisi Supabase Auth bağlanana kadar kullanılan geçici veri.
-const mockUser = {
-  name: 'Misafir Kullanıcı',
-  email: 'misafir@scaldcoffee.com',
-};
+import { useAuth } from '@/lib/auth-context';
 
 type ProfileMenuItem = {
   id: string;
@@ -21,7 +17,6 @@ const profileMenuItems: ProfileMenuItem[] = [
   { id: 'order-history', label: 'Sipariş Geçmişi' },
   { id: 'favorites', label: 'Favoriler' },
   { id: 'notification-settings', label: 'Bildirim Ayarları' },
-  { id: 'logout', label: 'Çıkış Yap' },
 ];
 
 function handleMenuItemPress(id: string) {
@@ -30,6 +25,13 @@ function handleMenuItemPress(id: string) {
 }
 
 export default function ProfileScreen() {
+  const { isConfigured, user, profile, signOut } = useAuth();
+
+  // Supabase henüz yapılandırılmadıysa (misafir/demo modu) sabit mock veriyle göster.
+  const displayName = isConfigured ? (profile?.fullName ?? 'Scald Üyesi') : 'Misafir Kullanıcı';
+  const displayEmail = isConfigured ? (user?.email ?? '') : 'misafir@scaldcoffee.com';
+  const loyaltyPoints = isConfigured ? (profile?.loyaltyPoints ?? 0) : mockLoyaltySummary.points;
+
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -39,20 +41,32 @@ export default function ProfileScreen() {
 
         <ScrollView contentContainerStyle={[styles.list, { paddingBottom: BottomTabInset }]}>
           <ThemedView type="backgroundElement" style={styles.userCard}>
-            <ThemedText type="subtitle">{mockUser.name}</ThemedText>
+            <ThemedText type="subtitle">{displayName}</ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
-              {mockUser.email}
+              {displayEmail}
             </ThemedText>
             <ThemedText type="small" themeColor="textSecondary" style={styles.userCardSpacing}>
               Sadakat Puanın
             </ThemedText>
             <ThemedText type="subtitle" themeColor="primary">
-              {mockLoyaltySummary.points} puan
+              {loyaltyPoints} puan
             </ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
               {mockLoyaltySummary.tier} · bir sonraki seviye {mockLoyaltySummary.nextTierAt} puan
             </ThemedText>
           </ThemedView>
+
+          {isConfigured && user && (
+            <ThemedView type="backgroundElement" style={styles.qrCard}>
+              <ThemedText type="smallBold">Puan Kazan</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary" style={styles.qrHint}>
+                Kasada bu kodu göster, puanların otomatik yüklensin.
+              </ThemedText>
+              <ThemedView style={styles.qrWrapper}>
+                <QRCode value={user.id} size={180} />
+              </ThemedView>
+            </ThemedView>
+          )}
 
           <ThemedView style={styles.section}>
             {profileMenuItems.map((item) => (
@@ -62,6 +76,16 @@ export default function ProfileScreen() {
                 </ThemedView>
               </Pressable>
             ))}
+
+            {isConfigured && user && (
+              <Pressable onPress={() => signOut()}>
+                <ThemedView type="backgroundElement" style={styles.menuRow}>
+                  <ThemedText type="default" style={styles.signOutText}>
+                    Çıkış Yap
+                  </ThemedText>
+                </ThemedView>
+              </Pressable>
+            )}
           </ThemedView>
         </ScrollView>
       </SafeAreaView>
@@ -94,6 +118,21 @@ const styles = StyleSheet.create({
   userCardSpacing: {
     marginTop: Spacing.two,
   },
+  qrCard: {
+    borderRadius: Spacing.four,
+    padding: Spacing.four,
+    gap: Spacing.one,
+    alignItems: 'center',
+  },
+  qrHint: {
+    textAlign: 'center',
+  },
+  qrWrapper: {
+    marginTop: Spacing.three,
+    padding: Spacing.three,
+    borderRadius: Spacing.three,
+    backgroundColor: '#ffffff',
+  },
   section: {
     gap: Spacing.three,
   },
@@ -103,5 +142,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: Spacing.three,
     padding: Spacing.three,
+  },
+  signOutText: {
+    color: '#D3453B',
   },
 });

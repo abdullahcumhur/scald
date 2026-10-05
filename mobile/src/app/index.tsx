@@ -4,17 +4,24 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
-import { mockLoyaltySummary, mockProducts } from '@/data/mock';
+import { mockLoyaltySummary } from '@/data/mock';
+import { useProducts } from '@/hooks/use-supabase-data';
+import { useAuth } from '@/lib/auth-context';
 
 export default function HomeScreen() {
-  const featured = mockProducts.slice(0, 3);
+  const { data: products } = useProducts();
+  const { isConfigured, user, profile } = useAuth();
+  const featured = products.slice(0, 3);
+
+  const loyaltyPoints = isConfigured ? (profile?.loyaltyPoints ?? 0) : mockLoyaltySummary.points;
+  const greetingName = isConfigured ? (profile?.fullName ?? user?.email ?? 'Hoş geldin') : 'Hoş geldin';
 
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ThemedView style={styles.header}>
           <ThemedText type="small" themeColor="textSecondary">
-            Hoş geldin
+            {greetingName}
           </ThemedText>
           <ThemedText type="title" style={styles.title}>
             Scald Coffee
@@ -26,7 +33,7 @@ export default function HomeScreen() {
             Sadakat Puanın
           </ThemedText>
           <ThemedText type="subtitle" themeColor="primary">
-            {mockLoyaltySummary.points} puan
+            {loyaltyPoints} puan
           </ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
             {mockLoyaltySummary.tier} · bir sonraki seviye {mockLoyaltySummary.nextTierAt} puan
