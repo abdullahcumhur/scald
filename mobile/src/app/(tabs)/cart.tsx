@@ -1,21 +1,21 @@
 // "Sırasız Teslim Al" (Faz 2.5) — Sepet / Rezervasyon ekranı.
 //
 // Kullanıcının aktif bir siparişi (pending/preparing/ready) varsa, sepet
-// yerine o siparişin teslim kodunu ve durumunu gösterir. Aktif sipariş yoksa
-// sepet içeriğini, şube + tahmini süre seçimini ve "Rezervasyonu Oluştur"
-// butonunu gösterir. Ödeme mağazada yapılır; bu ekran yalnızca rezervasyon
-// oluşturur.
+// yerine o siparişin teslim kodunu, sipariş tipini ve durum takvimini
+// gösterir. Aktif sipariş yoksa sepet içeriğini, sipariş tipi + şube +
+// tahmini süre seçimini ve "Rezervasyonu Oluştur" butonunu gösterir. Ödeme
+// mağazada yapılır; bu ekran yalnızca rezervasyon oluşturur.
 
-import { Ionicons } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 
 import { LoadingState } from '@/components/loading-state';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { BottomTabInset, Spacing } from '@/constants/theme';
+import { BottomTabInset, Radius, Spacing } from '@/constants/theme';
 import { useLocations } from '@/hooks/use-supabase-data';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth-context';
@@ -25,6 +25,21 @@ import { supabase } from '@/lib/supabase';
 const REQUESTED_MINUTES_OPTIONS = [10, 20, 30] as const;
 
 const ACTIVE_STATUSES = ['pending', 'preparing', 'ready'] as const;
+
+type OrderType = 'pickup' | 'table';
+
+const ORDER_TYPE_OPTIONS: { value: OrderType; label: string; icon: keyof typeof Feather.glyphMap }[] = [
+  { value: 'pickup', label: 'Şubeden Al', icon: 'shopping-bag' },
+  { value: 'table', label: 'Masada Sipariş', icon: 'coffee' },
+];
+
+// Takvim sırasıyla aynı: pending → preparing → ready → completed.
+const STATUS_STEPS: { status: ActiveOrder['status']; label: string }[] = [
+  { status: 'pending', label: 'Sipariş alındı' },
+  { status: 'preparing', label: 'Hazırlanıyor' },
+  { status: 'ready', label: 'Hazır' },
+  { status: 'completed', label: 'Teslim edildi' },
+];
 
 type OrderItemRow = {
   id: string;
@@ -39,6 +54,7 @@ type ActiveOrderRow = {
   pickup_code: string;
   requested_minutes: number;
   total_amount: number | string;
+  order_type: OrderType | null;
   order_items: OrderItemRow[];
   locations: { name: string } | null;
 };
@@ -49,6 +65,7 @@ type ActiveOrder = {
   pickupCode: string;
   requestedMinutes: number;
   totalAmount: number;
+  orderType: OrderType;
   locationName: string;
   items: { id: string; name: string; unitPrice: number; quantity: number }[];
 };
@@ -60,6 +77,7 @@ function mapActiveOrder(row: ActiveOrderRow): ActiveOrder {
     pickupCode: row.pickup_code,
     requestedMinutes: row.requested_minutes,
     totalAmount: typeof row.total_amount === 'string' ? Number(row.total_amount) : row.total_amount,
+    orderType: row.order_type ?? 'pickup',
     locationName: row.locations?.name ?? '',
     items: row.order_items.map((item) => ({
       id: item.id,
@@ -70,42 +88,104 @@ function mapActiveOrder(row: ActiveOrderRow): ActiveOrder {
   };
 }
 
-function statusLabel(status: ActiveOrder['status']): string {
+function orderTypeLabel(orderType: OrderType): string {
+  return orderType === 'table' ? 'Masada Sipariş' : 'Şubeden Al';
+}
+
+function statusVerb(status: ActiveOrder['status']): string {
   switch (status) {
     case 'pending':
-      return 'Beklemede';
+      return 'alındı, hazırlanmayı bekliyor';
     case 'preparing':
-      return 'Hazırlanıyor';
+      return 'hazırlanıyor';
     case 'ready':
-      return 'Hazır, gel al!';
+      return 'hazır, gel al!';
+    case 'completed':
+      return 'teslim edildi';
     default:
       return status;
   }
 }
 
-function CartHeader({ title, icon }: { title: string; icon: keyof typeof Ionicons.glyphMap }) {
+function buildOrderSummary(items: ActiveOrder['items'], status: ActiveOrder['status']): string {
+  const names = items.map((item) => item.name).join(' + ');
+  return `${names} ${statusVerb(status)}`;
+}
+
+function CartHeader({ title, icon }: { title: string; icon: keyof typeof Feather.glyphMap }) {
+  const theme = useTheme();
   return (
-    <ThemedView type="primary" style={styles.header}>
+    <ThemedView style={styles.header}>
       <SafeAreaView edges={['top']}>
-        <ThemedView type="primary" style={styles.headerRow}>
-          <Ionicons name={icon} size={20} color="#ffffff" />
-          <ThemedText type="subtitle" style={styles.headerTitle}>
-            {title}
-          </ThemedText>
+        <ThemedView lightColor="transparent" darkColor="transparent" style={styles.headerRow}>
+          <Feather name={icon} size={20} color={theme.text} />
+          <ThemedText type="subtitle">{title}</ThemedText>
         </ThemedView>
       </SafeAreaView>
     </ThemedView>
   );
 }
 
+function StatusTimeline({ status }: { status: ActiveOrder['status'] }) {
+  const theme = useTheme();
+  const currentIndex = STATUS_STEPS.findIndex((step) => step.status === status);
+
+  return (
+    <ThemedView type="backgroundElement" style={styles.timelineCard}>
+      {STATUS_STEPS.map((step, index) => {
+        const isDone = index < currentIndex;
+        const isCurrent = index === currentIndex;
+        const isLast = index === STATUS_STEPS.length - 1;
+
+        return (
+          <ThemedView key={step.status} lightColor="transparent" darkColor="transparent" style={styles.timelineRow}>
+            <ThemedView lightColor="transparent" darkColor="transparent" style={styles.timelineIndicatorCol}>
+              <ThemedView
+                style={[
+                  styles.timelineDot,
+                  isCurrent && { backgroundColor: theme.primary },
+                  isDone && { backgroundColor: theme.primary, opacity: 0.55 },
+                  !isCurrent && !isDone && { backgroundColor: theme.background, borderWidth: 1.5, borderColor: theme.backgroundSelected },
+                ]}
+                lightColor="transparent"
+                darkColor="transparent">
+                {isDone ? (
+                  <Feather name="check" size={12} color="#ffffff" />
+                ) : isCurrent ? (
+                  <ThemedView style={styles.timelineDotCore} lightColor="#ffffff" darkColor="#ffffff" />
+                ) : null}
+              </ThemedView>
+              {!isLast ? (
+                <ThemedView
+                  style={[styles.timelineConnector, (isDone || isCurrent) && { backgroundColor: theme.primary, opacity: isDone ? 0.55 : 0.3 }]}
+                  lightColor="#EDE9F7"
+                  darkColor="#2E2A3E"
+                />
+              ) : null}
+            </ThemedView>
+            <ThemedText
+              type={isCurrent ? 'smallBold' : 'small'}
+              themeColor={isCurrent || isDone ? 'text' : 'textSecondary'}
+              style={styles.timelineLabel}>
+              {step.label}
+            </ThemedText>
+          </ThemedView>
+        );
+      })}
+    </ThemedView>
+  );
+}
+
 export default function CartScreen() {
   const theme = useTheme();
+  const router = useRouter();
   const { isConfigured, user } = useAuth();
   const { items, removeItem, updateQuantity, clear, totalPrice } = useCart();
   const { data: locations, loading: locationsLoading } = useLocations();
 
   const [activeOrder, setActiveOrder] = useState<ActiveOrder | null>(null);
   const [activeOrderLoading, setActiveOrderLoading] = useState(isConfigured);
+  const [selectedOrderType, setSelectedOrderType] = useState<OrderType>('pickup');
   const [selectedLocationId, setSelectedLocationId] = useState<string | undefined>(undefined);
   const [requestedMinutes, setRequestedMinutes] = useState<number>(REQUESTED_MINUTES_OPTIONS[0]);
   const [submitting, setSubmitting] = useState(false);
@@ -120,7 +200,7 @@ export default function CartScreen() {
     setActiveOrderLoading(true);
     const { data, error: queryError } = await supabase
       .from('orders')
-      .select('id, status, pickup_code, requested_minutes, total_amount, order_items(*), locations(name)')
+      .select('id, status, pickup_code, requested_minutes, total_amount, order_type, order_items(*), locations(name)')
       .eq('user_id', user.id)
       .in('status', ACTIVE_STATUSES)
       .order('created_at', { ascending: false })
@@ -155,10 +235,16 @@ export default function CartScreen() {
       p_requested_minutes: requestedMinutes,
       p_items: items.map((item) => ({
         product_id: item.product.id,
-        product_name: item.product.name,
+        product_name:
+          item.selectedOptions && Object.keys(item.selectedOptions).length > 0
+            ? `${item.product.name} (${Object.entries(item.selectedOptions)
+                .map(([key, value]) => `${key}: ${value}`)
+                .join(', ')})`
+            : item.product.name,
         unit_price: item.product.price,
         quantity: item.quantity,
       })),
+      p_order_type: selectedOrderType,
     });
 
     if (createOrderError || !order) {
@@ -175,7 +261,7 @@ export default function CartScreen() {
   if (!isConfigured) {
     return (
       <ThemedView style={styles.container}>
-        <CartHeader title="Sepet" icon="cart" />
+        <CartHeader title="Sepet" icon="shopping-cart" />
         <ThemedView style={styles.body}>
           <ThemedText type="small" themeColor="textSecondary">
             Bu özellik için Supabase yapılandırması gerekiyor.
@@ -188,7 +274,7 @@ export default function CartScreen() {
   if (activeOrderLoading) {
     return (
       <ThemedView style={styles.container}>
-        <CartHeader title="Sepet" icon="cart" />
+        <CartHeader title="Sepet" icon="shopping-cart" />
         <ThemedView style={styles.body}>
           <LoadingState />
         </ThemedView>
@@ -199,50 +285,54 @@ export default function CartScreen() {
   if (activeOrder) {
     return (
       <ThemedView style={styles.container}>
-        <CartHeader title="Siparişin" icon="receipt" />
+        <CartHeader title="Siparişin" icon="file-text" />
 
         <ThemedView style={styles.body}>
           <ScrollView
             contentContainerStyle={[styles.list, { paddingBottom: BottomTabInset }]}
             showsVerticalScrollIndicator={false}>
             <ThemedView type="backgroundElement" style={styles.pickupCard}>
-              <ThemedView type="backgroundSelected" style={styles.pickupIconWrap}>
-                <Ionicons
-                  name={activeOrder.status === 'ready' ? 'checkmark-circle' : 'time'}
-                  size={30}
-                  color={theme.primary}
-                />
+              <ThemedView type="backgroundSelected" style={styles.orderTypeBadge}>
+                <Feather name={activeOrder.orderType === 'table' ? 'coffee' : 'shopping-bag'} size={12} color={theme.primary} />
+                <ThemedText type="small" themeColor="primary">
+                  {orderTypeLabel(activeOrder.orderType)}
+                </ThemedText>
               </ThemedView>
-              <ThemedText type="small" themeColor="textSecondary">
+
+              <ThemedText type="small" themeColor="textSecondary" style={styles.pickupCodeLabel}>
                 Teslim Kodun
               </ThemedText>
               <ThemedText type="title" themeColor="primary" style={styles.pickupCode}>
                 {activeOrder.pickupCode}
               </ThemedText>
-              <ThemedView type="backgroundSelected" style={styles.statusPill}>
-                <ThemedText type="smallBold" themeColor="primary">
-                  {statusLabel(activeOrder.status)}
-                </ThemedText>
-              </ThemedView>
+
               {activeOrder.locationName ? (
                 <ThemedView style={styles.infoRow} lightColor="transparent" darkColor="transparent">
-                  <Ionicons name="location-outline" size={14} color={theme.textSecondary} />
+                  <Feather name="map-pin" size={14} color={theme.textSecondary} />
                   <ThemedText type="small" themeColor="textSecondary">
                     {activeOrder.locationName}
                   </ThemedText>
                 </ThemedView>
               ) : null}
               <ThemedView style={styles.infoRow} lightColor="transparent" darkColor="transparent">
-                <Ionicons name="time-outline" size={14} color={theme.textSecondary} />
+                <Feather name="clock" size={14} color={theme.textSecondary} />
                 <ThemedText type="small" themeColor="textSecondary">
                   Tahmini süre: {activeOrder.requestedMinutes} dk
                 </ThemedText>
               </ThemedView>
             </ThemedView>
 
+            <ThemedView type="backgroundSelected" style={styles.summaryBanner}>
+              <ThemedText type="small" themeColor="text" style={styles.summaryBannerText}>
+                {buildOrderSummary(activeOrder.items, activeOrder.status)}
+              </ThemedText>
+            </ThemedView>
+
+            <StatusTimeline status={activeOrder.status} />
+
             <ThemedView style={styles.section}>
               <ThemedView style={styles.sectionHeaderRow} lightColor="transparent" darkColor="transparent">
-                <Ionicons name="receipt-outline" size={16} color={theme.text} />
+                <Feather name="list" size={16} color={theme.text} />
                 <ThemedText type="smallBold">Sipariş Kalemleri</ThemedText>
               </ThemedView>
               {activeOrder.items.map((item) => (
@@ -270,30 +360,53 @@ export default function CartScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <CartHeader title="Sepet" icon="cart" />
+      <CartHeader title="Sepet" icon="shopping-cart" />
 
       <ThemedView style={styles.body}>
         {items.length === 0 ? (
-          <ThemedText type="small" themeColor="textSecondary">
-            Sepetin boş. Menüden ürün ekleyerek başlayabilirsin.
-          </ThemedText>
+          <ThemedView style={styles.emptyState}>
+            <ThemedView type="backgroundSelected" style={styles.emptyIconWrap}>
+              <Feather name="shopping-bag" size={30} color={theme.primary} />
+            </ThemedView>
+            <ThemedText type="subtitle" style={styles.emptyTitle}>
+              Sepetin boş
+            </ThemedText>
+            <ThemedText type="small" themeColor="textSecondary" style={styles.emptyBody}>
+              Menüden favori ürünlerini ekleyerek rezervasyonunu oluşturmaya başlayabilirsin.
+            </ThemedText>
+            <Pressable
+              onPress={() => router.push('/menu')}
+              style={({ pressed }) => [styles.emptyCta, { backgroundColor: theme.primary, opacity: pressed ? 0.8 : 1 }]}>
+              <ThemedText type="smallBold" style={styles.emptyCtaText}>
+                Menüyü Görüntüle
+              </ThemedText>
+              <Feather name="arrow-right" size={16} color="#ffffff" />
+            </Pressable>
+          </ThemedView>
         ) : (
           <ScrollView
             contentContainerStyle={[styles.list, { paddingBottom: BottomTabInset }]}
             showsVerticalScrollIndicator={false}>
             <ThemedView style={styles.section}>
               <ThemedView style={styles.sectionHeaderRow} lightColor="transparent" darkColor="transparent">
-                <Ionicons name="cart-outline" size={16} color={theme.text} />
+                <Feather name="shopping-cart" size={16} color={theme.text} />
                 <ThemedText type="smallBold">Ürünler</ThemedText>
               </ThemedView>
               {items.map((item) => (
-                <ThemedView key={item.product.id} type="backgroundElement" style={styles.itemRow}>
+                <ThemedView key={item.lineId} type="backgroundElement" style={styles.itemRow}>
                   <ThemedView style={styles.itemInfo} lightColor="transparent" darkColor="transparent">
                     <ThemedText type="default">{item.product.name}</ThemedText>
+                    {item.selectedOptions && Object.keys(item.selectedOptions).length > 0 ? (
+                      <ThemedText type="small" themeColor="textSecondary">
+                        {Object.entries(item.selectedOptions)
+                          .map(([key, value]) => `${key}: ${value}`)
+                          .join(' · ')}
+                      </ThemedText>
+                    ) : null}
                     <ThemedText type="small" themeColor="textSecondary">
                       {item.product.price}₺ / adet
                     </ThemedText>
-                    <Pressable onPress={() => removeItem(item.product.id)}>
+                    <Pressable onPress={() => removeItem(item.lineId)}>
                       <ThemedText type="small" style={styles.removeText}>
                         Kaldır
                       </ThemedText>
@@ -302,19 +415,19 @@ export default function CartScreen() {
                   <ThemedView style={styles.itemActions} lightColor="transparent" darkColor="transparent">
                     <ThemedView style={styles.stepper} lightColor="transparent" darkColor="transparent">
                       <Pressable
-                        onPress={() => updateQuantity(item.product.id, item.quantity - 1)}
+                        onPress={() => updateQuantity(item.lineId, item.quantity - 1)}
                         hitSlop={8}
                         style={[styles.stepperButton, { backgroundColor: theme.backgroundSelected }]}>
-                        <Ionicons name="remove" size={15} color={theme.primary} />
+                        <Feather name="minus" size={14} color={theme.primary} />
                       </Pressable>
                       <ThemedText type="smallBold" style={styles.stepperValue}>
                         {item.quantity}
                       </ThemedText>
                       <Pressable
-                        onPress={() => updateQuantity(item.product.id, item.quantity + 1)}
+                        onPress={() => updateQuantity(item.lineId, item.quantity + 1)}
                         hitSlop={8}
                         style={[styles.stepperButton, { backgroundColor: theme.backgroundSelected }]}>
-                        <Ionicons name="add" size={15} color={theme.primary} />
+                        <Feather name="plus" size={14} color={theme.primary} />
                       </Pressable>
                     </ThemedView>
                     <ThemedText type="smallBold">{item.product.price * item.quantity}₺</ThemedText>
@@ -330,7 +443,34 @@ export default function CartScreen() {
 
             <ThemedView style={styles.section}>
               <ThemedView style={styles.sectionHeaderRow} lightColor="transparent" darkColor="transparent">
-                <Ionicons name="location-outline" size={16} color={theme.text} />
+                <Feather name="tag" size={16} color={theme.text} />
+                <ThemedText type="smallBold">Sipariş Tipi</ThemedText>
+              </ThemedView>
+              <ThemedView style={styles.orderTypeRow} lightColor="transparent" darkColor="transparent">
+                {ORDER_TYPE_OPTIONS.map((option) => {
+                  const isSelected = option.value === selectedOrderType;
+                  return (
+                    <Pressable key={option.value} onPress={() => setSelectedOrderType(option.value)} style={styles.orderTypeCardWrapper}>
+                      <ThemedView
+                        type={isSelected ? 'backgroundSelected' : 'backgroundElement'}
+                        style={[styles.orderTypeCard, isSelected && { borderColor: theme.primary, borderWidth: 1.5 }]}>
+                        <Feather name={option.icon} size={20} color={isSelected ? theme.primary : theme.textSecondary} />
+                        <ThemedText
+                          type="smallBold"
+                          themeColor={isSelected ? 'primary' : 'textSecondary'}
+                          style={styles.orderTypeLabel}>
+                          {option.label}
+                        </ThemedText>
+                      </ThemedView>
+                    </Pressable>
+                  );
+                })}
+              </ThemedView>
+            </ThemedView>
+
+            <ThemedView style={styles.section}>
+              <ThemedView style={styles.sectionHeaderRow} lightColor="transparent" darkColor="transparent">
+                <Feather name="map-pin" size={16} color={theme.text} />
                 <ThemedText type="smallBold">Şube Seç</ThemedText>
               </ThemedView>
               {locationsLoading ? (
@@ -344,7 +484,7 @@ export default function CartScreen() {
                     <Pressable key={location.id} onPress={() => setSelectedLocationId(location.id)}>
                       <ThemedView
                         type={isSelected ? 'backgroundSelected' : 'backgroundElement'}
-                        style={styles.locationRow}>
+                        style={[styles.locationRow, isSelected && { borderColor: theme.primary, borderWidth: 1.5 }]}>
                         <ThemedText type="default">{location.name}</ThemedText>
                         <ThemedText type="small" themeColor="textSecondary">
                           {location.address}
@@ -358,7 +498,7 @@ export default function CartScreen() {
 
             <ThemedView style={styles.section}>
               <ThemedView style={styles.sectionHeaderRow} lightColor="transparent" darkColor="transparent">
-                <Ionicons name="time-outline" size={16} color={theme.text} />
+                <Feather name="clock" size={16} color={theme.text} />
                 <ThemedText type="smallBold">Tahmini Süre</ThemedText>
               </ThemedView>
               <ThemedView style={styles.minutesRow} lightColor="transparent" darkColor="transparent">
@@ -384,7 +524,7 @@ export default function CartScreen() {
 
             {error && (
               <ThemedView style={styles.errorBox}>
-                <Ionicons name="alert-circle" size={18} color="#D3453B" />
+                <Feather name="alert-circle" size={18} color="#D3453B" />
                 <ThemedText type="small" style={styles.errorText}>
                   {error}
                 </ThemedText>
@@ -404,7 +544,7 @@ export default function CartScreen() {
               <ThemedText type="smallBold" style={styles.submitButtonText}>
                 {submitting ? 'Oluşturuluyor...' : 'Rezervasyonu Oluştur'}
               </ThemedText>
-              {!submitting && <Ionicons name="arrow-forward" size={18} color="#ffffff" />}
+              {!submitting && <Feather name="arrow-right" size={18} color="#ffffff" />}
             </Pressable>
           </ScrollView>
         )}
@@ -418,9 +558,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    borderBottomLeftRadius: Spacing.five,
-    borderBottomRightRadius: Spacing.five,
-    paddingBottom: Spacing.three,
+    paddingBottom: Spacing.two,
   },
   headerRow: {
     flexDirection: 'row',
@@ -428,9 +566,6 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
     paddingHorizontal: Spacing.four,
     paddingTop: Spacing.three,
-  },
-  headerTitle: {
-    color: '#ffffff',
   },
   body: {
     flex: 1,
@@ -453,7 +588,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderRadius: Spacing.four,
+    borderRadius: Radius.card,
     padding: Spacing.three,
     gap: Spacing.two,
   },
@@ -488,11 +623,41 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderRadius: Spacing.four,
+    borderRadius: Radius.card,
     padding: Spacing.three,
   },
+  orderTypeRow: {
+    flexDirection: 'row',
+    gap: Spacing.two,
+  },
+  orderTypeCardWrapper: {
+    flex: 1,
+  },
+  orderTypeCard: {
+    borderRadius: Radius.card,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+    paddingVertical: Spacing.three,
+    paddingHorizontal: Spacing.two,
+    alignItems: 'center',
+    gap: Spacing.one,
+  },
+  orderTypeLabel: {
+    textAlign: 'center',
+  },
+  orderTypeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.one,
+    borderRadius: Radius.pill,
+    marginBottom: Spacing.two,
+  },
   locationRow: {
-    borderRadius: Spacing.four,
+    borderRadius: Radius.card,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
     padding: Spacing.three,
     gap: Spacing.half,
   },
@@ -504,7 +669,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   minuteButton: {
-    borderRadius: Spacing.five,
+    borderRadius: Radius.pill,
     paddingVertical: Spacing.three,
     alignItems: 'center',
   },
@@ -516,7 +681,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.two,
     backgroundColor: 'rgba(211,69,59,0.12)',
-    borderRadius: Spacing.three,
+    borderRadius: Radius.card,
     padding: Spacing.three,
   },
   errorText: {
@@ -528,39 +693,101 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: Spacing.two,
-    borderRadius: Spacing.four,
+    borderRadius: Radius.button,
     paddingVertical: Spacing.three,
   },
   submitButtonText: {
     color: '#ffffff',
   },
   pickupCard: {
-    borderRadius: Spacing.four,
+    borderRadius: Radius.hero,
     padding: Spacing.four,
     gap: Spacing.one,
     alignItems: 'center',
   },
-  pickupIconWrap: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: Spacing.one,
+  pickupCodeLabel: {
+    marginTop: Spacing.one,
   },
   pickupCode: {
     letterSpacing: 4,
-  },
-  statusPill: {
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.one,
-    borderRadius: Spacing.five,
-    marginTop: Spacing.half,
-    marginBottom: Spacing.one,
   },
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.one,
+  },
+  summaryBanner: {
+    borderRadius: Radius.card,
+    padding: Spacing.three,
+  },
+  summaryBannerText: {
+    textAlign: 'center',
+  },
+  timelineCard: {
+    borderRadius: Radius.card,
+    padding: Spacing.four,
+    gap: 0,
+  },
+  timelineRow: {
+    flexDirection: 'row',
+    gap: Spacing.three,
+  },
+  timelineIndicatorCol: {
+    alignItems: 'center',
+    width: 24,
+  },
+  timelineDot: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  timelineDotCore: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  timelineConnector: {
+    width: 2,
+    flex: 1,
+    minHeight: Spacing.four,
+  },
+  timelineLabel: {
+    paddingTop: Spacing.half,
+    paddingBottom: Spacing.three,
+  },
+  emptyState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.two,
+    paddingHorizontal: Spacing.four,
+  },
+  emptyIconWrap: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.one,
+  },
+  emptyTitle: {
+    textAlign: 'center',
+  },
+  emptyBody: {
+    textAlign: 'center',
+    marginBottom: Spacing.two,
+  },
+  emptyCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    borderRadius: Radius.button,
+    paddingVertical: Spacing.three,
+    paddingHorizontal: Spacing.four,
+  },
+  emptyCtaText: {
+    color: '#ffffff',
   },
 });
